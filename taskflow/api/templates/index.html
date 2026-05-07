@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TaskFlow</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+input,select,textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;background:#fff;color:#1a1a1a;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+button{cursor:pointer;border:none;border-radius:7px;font-size:13px;font-weight:600;padding:8px 16px;transition:all .15s;font-family:inherit}
+button:hover{opacity:.85}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:#4f46e5;color:#fff;box-shadow:0 1px 4px rgba(79,70,229,.3)}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-secondary{background:#e5e7eb;color:#374151}
+.btn-ghost{background:transparent;color:#6b7280;padding:5px 10px}
+.btn-ghost:hover{background:#f3f4f6;opacity:1}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-xs{padding:2px 8px;font-size:11px}
+.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1.4}
+.badge::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.s-pending{background:#f3f4f6;color:#4b5563}.s-pending::before{background:#9ca3af}
+.s-todo{background:#eff6ff;color:#1d4ed8}.s-todo::before{background:#3b82f6}
+.s-ongoing{background:#fef3c7;color:#92400e}.s-ongoing::before{background:#f59e0b}
+.s-in_review{background:#ede9fe;color:#5b21b6}.s-in_review::before{background:#7c3aed}
+.s-completed{background:#dcfce7;color:#15803d}.s-completed::before{background:#22c55e}
+.s-blocked{background:#fee2e2;color:#991b1b}.s-blocked::before{background:#ef4444}
+.s-dismissed{background:#fce7f3;color:#9d174d}.s-dismissed::before{background:#ec4899}
+.p-critical{background:#fee2e2;color:#991b1b}.p-critical::before{background:#ef4444}
+.p-high{background:#ffedd5;color:#9a3412}.p-high::before{background:#f97316}
+.p-medium{background:#fef9c3;color:#713f12}.p-medium::before{background:#eab308}
+.p-low{background:#f0fdf4;color:#14532d}.p-low::before{background:#22c55e}
+.badge-admin{background:#ede9fe;color:#6d28d9}.badge-admin::before{background:#7c3aed}
+.badge-member{background:#f0fdf4;color:#15803d}.badge-member::before{background:#22c55e}
+
+/* Layout */
+.sidebar{width:230px;background:#1e1b4b;height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:20}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+.nav-item{padding:10px 16px;cursor:pointer;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:10px;margin:2px 8px;border-radius:8px;transition:all .15s}
+.nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-item.active{background:#4f46e5;color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.5)}
+.main{margin-left:230px;padding:28px;min-height:100vh}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px}
+.modal{background:#fff;border-radius:14px;padding:28px;width:540px;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-wide{width:680px}
+
+/* Task rows */
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-bottom:1px solid #f3f4f6;transition:background .1s}
+.task-row:hover{background:#fafafa}
+.task-row:last-child{border-bottom:none}
+.overdue-stripe{border-left:3px solid #ef4444}
+
+/* Kanban */
+.kanban-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.kanban-col{background:#f8f9fa;border-radius:12px;padding:12px;min-width:190px;flex:0 0 190px}
+.kanban-col-header{font-size:12px;font-weight:700;padding:6px 8px 10px;display:flex;align-items:center;justify-content:space-between}
+.kanban-card{background:#fff;border-radius:9px;padding:11px 12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.09);cursor:pointer;border-left:3px solid transparent;transition:box-shadow .15s}
+.kanban-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.13)}
+
+/* Forms */
+.form-group{margin-bottom:14px}
+label{font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px}
+.error-msg{color:#dc2626;font-size:13px;background:#fef2f2;padding:9px 13px;border-radius:7px;margin-top:6px}
+.success-msg{color:#15803d;font-size:13px;background:#f0fdf4;padding:9px 13px;border-radius:7px;margin-top:8px}
+
+/* Misc */
+.tab-btn{padding:7px 16px;border-radius:7px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.tab-active{background:#4f46e5;color:#fff}
+.tab-inactive{background:#e5e7eb;color:#374151}
+.stat-card{background:#fff;border-radius:12px;padding:18px 22px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:3px solid}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.progress-bg{background:#e5e7eb;border-radius:99px;height:7px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;transition:width .4s}
+.tag{display:inline-block;background:#eff6ff;color:#1d4ed8;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:500;margin-right:3px;margin-bottom:2px}
+
+/* Notification bell */
+.notif-bell{position:relative;cursor:pointer;padding:6px;border-radius:8px;color:rgba(255,255,255,.7);font-size:20px;transition:all .15s;background:none;border:none}
+.notif-bell:hover{background:rgba(255,255,255,.1);color:#fff}
+.notif-badge{position:absolute;top:0;right:0;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 5px;min-width:17px;text-align:center;border:2px solid #1e1b4b;pointer-events:none}
+.notif-panel{position:fixed;top:0;right:0;width:380px;max-width:95vw;height:100vh;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:500;display:flex;flex-direction:column}
+.notif-item{padding:14px 18px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .1s}
+.notif-item:hover{background:#fafafa}
+.notif-item.unread{background:#eff6ff;border-left:3px solid #4f46e5}
+.history-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+{%verbatim %}
+const API='/api';
+const getToken=()=>localStorage.getItem('tf_token');
+
+async function api(path,opts={}){
+  const res=await fetch(API+path,{
+    headers:{'Content-Type':'application/json',...(getToken()?{'Authorization':'Bearer '+getToken()}:{})},
+    ...opts
+  });
+  if(res.status===204) return {};
+  const data=await res.json();
+  if(!res.ok) throw data;
+  return data;
+}
+
+/* ── Config ─────────────────────────────────────────────────────────────────── */
+const STATUSES=[
+  {key:'pending',   label:'Pending',   cls:'s-pending',   icon:'⏳',col:'#9ca3af'},
+  {key:'todo',      label:'To Do',     cls:'s-todo',      icon:'📋',col:'#3b82f6'},
+  {key:'ongoing',   label:'Ongoing',   cls:'s-ongoing',   icon:'🔄',col:'#f59e0b'},
+  {key:'in_review', label:'In Review', cls:'s-in_review', icon:'🔍',col:'#7c3aed'},
+  {key:'completed', label:'Completed', cls:'s-completed', icon:'✅',col:'#22c55e'},
+  {key:'blocked',   label:'Blocked',   cls:'s-blocked',   icon:'🚫',col:'#ef4444'},
+  {key:'dismissed', label:'Dismissed', cls:'s-dismissed', icon:'❌',col:'#ec4899'},
+];
+const STATUS_MAP=Object.fromEntries(STATUSES.map(s=>[s.key,s]));
+
+const PRIORITIES=[
+  {key:'critical',label:'🔴 Critical',cls:'p-critical'},
+  {key:'high',    label:'🟠 High',    cls:'p-high'},
+  {key:'medium',  label:'🟡 Medium',  cls:'p-medium'},
+  {key:'low',     label:'🟢 Low',     cls:'p-low'},
+];
+const PRI_MAP=Object.fromEntries(PRIORITIES.map(p=>[p.key,p]));
+
+const NOTIF_ICONS={'task_status_changed':'🔄','task_assigned':'👤','task_commented':'💬','task_overdue':'⚠️','project_member_added':'🎉'};
+
+/* ── Shared helpers ──────────────────────────────────────────────────────────── */
+function StatusBadge({s}){
+  const cfg=STATUS_MAP[s]||{label:s,cls:'s-todo',icon:'📋'};
+  return <span className={'badge '+cfg.cls}>{cfg.icon} {cfg.label}</span>;
+}
+function PriBadge({p}){
+  const cfg=PRI_MAP[p]||{label:p,cls:'p-medium'};
+  return <span className={'badge '+cfg.cls}>{cfg.label}</span>;
+}
+function Avatar({name='?',size=34,color='#4f46e5',bg='#ede9fe'}){
+  return(
+    <div className="avatar" style={{width:size,height:size,background:bg,color,fontSize:Math.round(size*.38)}}>
+      {String(name||'?')[0].toUpperCase()}
+    </div>
+  );
+}
+function ProgressBar({value,color='#4f46e5'}){
+  return(
+    <div className="progress-bg">
+      <div className="progress-fill" style={{width:Math.min(value||0,100)+'%',background:color}}/>
+    </div>
+  );
+}
+function Modal({title,onClose,children,wide}){
+  return(
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className={'modal'+(wide?' modal-wide':'')}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+          <div style={{fontWeight:700,fontSize:17}}>{title}</div>
+          <span style={{cursor:'pointer',fontSize:24,color:'#9ca3af',lineHeight:1}} onClick={onClose}>×</span>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+function Tags({tags}){
+  if(!tags) return null;
+  return <>{tags.split(',').filter(Boolean).map((t,i)=><span key={i} className="tag">{t.trim()}</span>)}</>;
+}
+function timeAgo(dt){
+  if(!dt) return '';
+  const diff=Date.now()-new Date(dt).getTime();
+  const m=Math.floor(diff/60000),h=Math.floor(m/60),d=Math.floor(h/24);
+  if(d>0) return d+'d ago';
+  if(h>0) return h+'h ago';
+  if(m>0) return m+'m ago';
+  return 'just now';
+}
+
+/* ── Auth ─────────────────────────────────────────────────────────────────── */
+function AuthPage({onLogin}){
+  const [mode,setMode]=React.useState('login');
+  const [form,setForm]=React.useState({username:'',password:'',email:'',first_name:'',last_name:''});
+  const [error,setError]=React.useState('');
+  const [loading,setLoading]=React.useState(false);
+  const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
+
+  const submit=async()=>{
+    setError('');setLoading(true);
+    try{
+      const d=mode==='login'
+        ?await api('/auth/login/',{method:'POST',body:JSON.stringify({username:form.username,password:form.password})})
+        :await api('/auth/register/',{method:'POST',body:JSON.stringify(form)});
+      localStorage.setItem('tf_token',d.access);
+      onLogin();
+    }catch(e){setError(e.detail||e.non_field_errors?.[0]||e.username?.[0]||JSON.stringify(e));}
+    setLoading(false);
+  };
+
+  return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4338ca 100%)'}}>
+      <div className="card" style={{width:400,padding:38}}>
+        <div style={{textAlign:'center',marginBottom:28}}>
+          <div style={{fontSize:32,fontWeight:800,color:'#4f46e5',letterSpacing:'-1px'}}>⚡ TaskFlow</div>
+          <div style={{color:'#6b7280',fontSize:14,marginTop:6}}>{mode==='login'?'Welcome back!':'Create your account'}</div>
+        </div>
+        {mode==='signup'&&(
+          <>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
+              <div><label>First Name</label><input value={form.first_name} onChange={set('first_name')} placeholder="John"/></div>
+              <div><label>Last Name</label><input value={form.last_name} onChange={set('last_name')} placeholder="Doe"/></div>
+            </div>
+            <div className="form-group"><label>Email</label><input type="email" value={form.email} onChange={set('email')} placeholder="john@example.com"/></div>
+          </>
+        )}
+        <div className="form-group"><label>Username</label><input value={form.username} onChange={set('username')} placeholder="johndoe" autoFocus/></div>
+        <div className="form-group"><label>Password</label><input type="password" value={form.password} onChange={set('password')} placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&submit()}/></div>
+        {error&&<div className="error-msg">{error}</div>}
+        <button className="btn-primary" style={{width:'100%',padding:12,marginTop:14,fontSize:15}} onClick={submit} disabled={loading}>
+          {loading?'Please wait…':mode==='login'?'Sign In':'Create Account'}
+        </button>
+        <div style={{textAlign:'center',marginTop:16,fontSize:13,color:'#6b7280'}}>
+          {mode==='login'
+            ?<>No account? <span style={{color:'#4f46e5',cursor:'pointer',fontWeight:600}} onClick={()=>setMode('signup')}>Sign up free</span></>
+            :<>Have an account? <span style={{color:'#4f46e5',cursor:'pointer',fontWeight:600}} onClick={()=>setMode('login')}>Sign in</span></>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Invite Accept ───────────────────────────────────────────────────────────── */
+function AcceptInvitePage({token}){
+  const [info,setInfo]=React.useState(null);
+  const [err,setErr]=React.useState('');
+  const [form,setForm]=React.useState({username:'',password:''});
+  const [done,setDone]=React.useState(false);
+  const [loading,setLoading]=React.useState(false);
+
+  React.useEffect(()=>{
+    fetch('/api/invites/'+token+'/').then(r=>r.json())
+      .then(d=>{if(d.error)setErr(d.error);else setInfo(d);})
+      .catch(()=>setErr('Failed to load invite'));
+  },[token]);
+
+  const accept=async()=>{
+    setLoading(true);setErr('');
+    try{
+      const headers={'Content-Type':'application/json'};
+      if(getToken()) headers['Authorization']='Bearer '+getToken();
+      const res=await fetch('/api/invites/'+token+'/accept/',{method:'POST',headers,body:JSON.stringify({...form,email:info?.email})});
+      const d=await res.json();
+      if(!res.ok) throw d;
+      localStorage.setItem('tf_token',d.access);
+      setDone(true);
+      setTimeout(()=>{window.location.href='/';},2000);
+    }catch(e){setErr(e.detail||e.username?.[0]||e.error||JSON.stringify(e));}
+    setLoading(false);
+  };
+
+  if(done) return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div className="card" style={{textAlign:'center',width:340,padding:40}}>
+        <div style={{fontSize:48,marginBottom:16}}>🎉</div>
+        <div style={{fontWeight:700,fontSize:20}}>You're in!</div>
+        <div style={{color:'#6b7280',marginTop:8}}>Redirecting to dashboard…</div>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#1e1b4b,#312e81)'}}>
+      <div className="card" style={{width:410,padding:36}}>
+        <div style={{textAlign:'center',marginBottom:22}}>
+          <div style={{fontSize:26,fontWeight:800,color:'#4f46e5'}}>⚡ TaskFlow</div>
+          {info&&<>
+            <div style={{fontWeight:700,fontSize:18,marginTop:12}}>You're invited! 🎉</div>
+            <div style={{color:'#6b7280',fontSize:14,marginTop:6}}>
+              <strong>{info.invited_by}</strong> invited you to <strong style={{color:'#4f46e5'}}>{info.project_name}</strong> as <strong>{info.role}</strong>
+            </div>
+          </>}
+          {!info&&!err&&<div style={{color:'#6b7280',marginTop:12}}>Loading…</div>}
+          {err&&<div className="error-msg" style={{marginTop:12}}>{err}</div>}
+        </div>
+        {info&&<>
+          <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,color:'#1d4ed8'}}>
+            📧 Invite for: <strong>{info.email}</strong>
+          </div>
+          {!getToken()&&<>
+            <div className="form-group"><label>Choose a Username</label><input value={form.username} onChange={e=>setForm(f=>({...f,username:e.target.value}))} autoFocus/></div>
+            <div className="form-group"><label>Choose a Password</label><input type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}/></div>
+          </>}
+          {getToken()&&<div className="success-msg" style={{marginBottom:14}}>✅ Already signed in — click to join</div>}
+          {err&&<div className="error-msg" style={{marginBottom:10}}>{err}</div>}
+          <button className="btn-primary" style={{width:'100%',padding:11}} onClick={accept} disabled={loading}>
+            {loading?'Joining…':'Join '+info.project_name}
+          </button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Notification Panel ──────────────────────────────────────────────────────── */
+function NotificationPanel({onClose,onCountChange}){
+  const [notifs,setNotifs]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+
+  const load=async()=>{
+    setLoading(true);
+    try{const d=await api('/notifications/');setNotifs(d);}catch(e){}
+    setLoading(false);
+  };
+  React.useEffect(()=>{load();},[]);
+
+  const markAllRead=async()=>{
+    await api('/notifications/mark-read/',{method:'POST',body:JSON.stringify({})});
+    load();onCountChange(0);
+  };
+
+  const markOne=async(id)=>{
+    await api('/notifications/mark-read/',{method:'POST',body:JSON.stringify({ids:[id]})});
+    setNotifs(n=>n.map(x=>x.id===id?{...x,is_read:true}:x));
+    onCountChange();
+  };
+
+  const deleteOne=async(id,e)=>{
+    e.stopPropagation();
+    await api('/notifications/'+id+'/',{method:'DELETE'});
+    setNotifs(n=>n.filter(x=>x.id!==id));
+    onCountChange();
+  };
+
+  const unreadCount=notifs.filter(n=>!n.is_read).length;
+
+  return(
+    <>
+      <div style={{position:'fixed',inset:0,zIndex:499}} onClick={onClose}/>
+      <div className="notif-panel">
+        {/* Header */}
+        <div style={{padding:'18px 18px 14px',borderBottom:'1px solid #f3f4f6',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+          <div>
+            <div style={{fontWeight:700,fontSize:16}}>🔔 Notifications</div>
+            {unreadCount>0&&<div style={{fontSize:12,color:'#6b7280',marginTop:2}}>{unreadCount} unread</div>}
+          </div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {unreadCount>0&&(
+              <button className="btn-ghost btn-sm" onClick={markAllRead}>Mark all read</button>
+            )}
+            <button className="btn-ghost btn-sm" onClick={onClose}>✕</button>
+          </div>
+        </div>
+
+        {/* List */}
+        <div style={{flex:1,overflowY:'auto'}}>
+          {loading&&<div style={{padding:32,textAlign:'center',color:'#6b7280'}}>Loading…</div>}
+          {!loading&&notifs.length===0&&(
+            <div style={{padding:48,textAlign:'center',color:'#6b7280'}}>
+              <div style={{fontSize:40,marginBottom:12}}>🔕</div>
+              <div style={{fontWeight:600}}>All caught up!</div>
+              <div style={{fontSize:13,marginTop:4}}>No notifications yet</div>
+            </div>
+          )}
+          {notifs.map(n=>(
+            <div key={n.id} className={'notif-item'+(n.is_read?'':' unread')} onClick={()=>!n.is_read&&markOne(n.id)}>
+              <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+                <div style={{fontSize:22,flexShrink:0,marginTop:2}}>{NOTIF_ICONS[n.notif_type]||'📢'}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:n.is_read?500:700,fontSize:13,marginBottom:3}}>{n.title}</div>
+                  <div style={{fontSize:12,color:'#6b7280',lineHeight:1.5}}>{n.message}</div>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}>
+                    {n.actor&&<span style={{fontSize:11,color:'#9ca3af'}}>by @{n.actor.username}</span>}
+                    <span style={{fontSize:11,color:'#9ca3af',marginLeft:'auto'}}>{timeAgo(n.created_at)}</span>
+                    {!n.is_read&&<span style={{width:7,height:7,borderRadius:'50%',background:'#4f46e5',display:'inline-block',flexShrink:0}}/>}
+                  </div>
+                </div>
+                <button className="btn-ghost btn-xs" title="Delete" onClick={e=>deleteOne(n.id,e)} style={{flexShrink:0,padding:'2px 6px'}}>×</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ── Task Modal ──────────────────────────────────────────────────────────────── */
+function TaskModal({projectId:initPid,members:initMembers,projects,onClose,onSave,task,currentUser}){
+  const needsPicker=!initPid&&!task;
+  const [pid,setPid]=React.useState(initPid||(task?String(task.project):(projects&&projects[0]?String(projects[0].id):'')));
+  const [members,setMembers]=React.useState(initMembers||[]);
+  const [comments,setComments]=React.useState([]);
+  const [history,setHistory]=React.useState([]);
+  const [newComment,setNewComment]=React.useState('');
+  const [tab,setTab]=React.useState('details');
+  const [form,setForm]=React.useState(task
+    ?{title:task.title,description:task.description||'',status:task.status,priority:task.priority,due_date:task.due_date||'',assigned_to_id:task.assigned_to?String(task.assigned_to.id):'',tags:task.tags||''}
+    :{title:'',description:'',status:'todo',priority:'medium',due_date:'',assigned_to_id:'',tags:''});
+  const [err,setErr]=React.useState('');
+  const [saving,setSaving]=React.useState(false);
+  const [postingComment,setPostingComment]=React.useState(false);
+
+  React.useEffect(()=>{
+    const p=pid||(task?String(task.project):null);
+    if(!p) return;
+    if(!initMembers||!initMembers.length)
+      api('/projects/'+p+'/members/').then(d=>setMembers(d.results||d)).catch(()=>{});
+  },[pid]);
+
+  React.useEffect(()=>{
+    if(task&&tab==='comments') api('/tasks/'+task.id+'/comments/').then(d=>setComments(d.results||d)).catch(()=>{});
+    if(task&&tab==='history')  api('/tasks/'+task.id+'/history/').then(d=>setHistory(d.results||d)).catch(()=>{});
+  },[tab,task]);
+
+  const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
+
+  const save=async()=>{
+    if(!form.title.trim()){setErr('Title is required');return;}
+    const p=pid||(task?String(task.project):null);
+    if(!p){setErr('Select a project');return;}
+    setSaving(true);setErr('');
+    try{
+      const body={...form,assigned_to_id:form.assigned_to_id||null};
+      if(task) await api('/tasks/'+task.id+'/',{method:'PATCH',body:JSON.stringify(body)});
+      else await api('/projects/'+p+'/tasks/',{method:'POST',body:JSON.stringify(body)});
+      onSave();
+    }catch(e){setErr(e.title?.[0]||e.detail||JSON.stringify(e));}
+    setSaving(false);
+  };
+
+  const postComment=async()=>{
+    if(!newComment.trim()||!task) return;
+    setPostingComment(true);
+    try{
+      await api('/tasks/'+task.id+'/comments/',{method:'POST',body:JSON.stringify({text:newComment})});
+      setNewComment('');
+      api('/tasks/'+task.id+'/comments/').then(d=>setComments(d.results||d)).catch(()=>{});
+    }catch(e){}
+    setPostingComment(false);
+  };
+
+  const statusColor=STATUS_MAP[form.status]?.col||'#4f46e5';
+
+  const TABS=task?[{id:'details',label:'📋 Details'},{id:'comments',label:'💬 Comments'},{id:'history',label:'🕐 History'}]:[{id:'details',label:'📋 Details'}];
+
+  return(
+    <Modal title={task?'Edit Task':'New Task'} onClose={onClose} wide>
+      {task&&(
+        <div style={{display:'flex',gap:8,marginBottom:20,borderBottom:'1px solid #f3f4f6',paddingBottom:14}}>
+          {TABS.map(t=>(
+            <button key={t.id} className={'tab-btn '+(tab===t.id?'tab-active':'tab-inactive')} onClick={()=>setTab(t.id)} style={{padding:'6px 14px'}}>
+              {t.label}
+            </button>
+          ))}
+          {task&&<div style={{marginLeft:'auto',display:'flex',gap:6,alignItems:'center'}}>
+            <StatusBadge s={task.status}/>
+            <PriBadge p={task.priority}/>
+          </div>}
+        </div>
+      )}
+
+      {/* ── Details ── */}
+      {tab==='details'&&<>
+        {needsPicker&&(
+          <div className="form-group">
+            <label>Project *</label>
+            <select value={pid} onChange={e=>{setPid(e.target.value);setForm(f=>({...f,assigned_to_id:''}));}}>
+              <option value="">— Select a project —</option>
+              {(projects||[]).map(p=><option key={p.id} value={String(p.id)}>{p.name}</option>)}
+            </select>
+          </div>
+        )}
+        <div className="form-group"><label>Task Title *</label><input value={form.title} onChange={set('title')} placeholder="What needs to be done?" autoFocus/></div>
+        <div className="form-group"><label>Description</label><textarea rows={3} value={form.description} onChange={set('description')} placeholder="Add context, steps, acceptance criteria…"/></div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <div className="form-group">
+            <label>Status</label>
+            <select value={form.status} onChange={set('status')} style={{borderLeft:'4px solid '+statusColor}}>
+              {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Priority</label>
+            <select value={form.priority} onChange={set('priority')}>
+              {PRIORITIES.map(p=><option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <div className="form-group">
+            <label>Assign To</label>
+            <select value={form.assigned_to_id} onChange={set('assigned_to_id')}>
+              <option value="">Unassigned</option>
+              {members.map(m=>(
+                <option key={m.user.id} value={String(m.user.id)}>
+                  {m.user.first_name?m.user.first_name+' ('+m.user.username+')':m.user.username} — {m.role}
+                </option>
+              ))}
+            </select>
+            {pid&&!members.length&&<div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>Loading members…</div>}
+          </div>
+          <div className="form-group"><label>Due Date</label><input type="date" value={form.due_date} onChange={set('due_date')}/></div>
+        </div>
+        <div className="form-group">
+          <label>Tags <span style={{color:'#9ca3af',fontWeight:400,fontSize:12}}>(comma-separated)</span></label>
+          <input value={form.tags} onChange={set('tags')} placeholder="bug, frontend, urgent, design"/>
+        </div>
+        {err&&<div className="error-msg">{err}</div>}
+        <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:16}}>
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={save} disabled={saving}>{saving?'Saving…':task?'Update Task':'Create Task'}</button>
+        </div>
+      </>}
+
+      {/* ── Comments ── */}
+      {tab==='comments'&&task&&<>
+        <div style={{maxHeight:320,overflowY:'auto',marginBottom:14}}>
+          {!comments.length&&<div style={{color:'#6b7280',fontSize:14,textAlign:'center',padding:32}}>No comments yet — start the conversation!</div>}
+          {comments.map(c=>(
+            <div key={c.id} style={{background:'#f8f9fa',borderRadius:9,padding:12,marginBottom:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                <Avatar name={c.author?.username||'?'} size={28} bg="#e0e7ff" color="#4f46e5"/>
+                <span style={{fontWeight:700,fontSize:13}}>{c.author?.username}</span>
+                <span style={{color:'#9ca3af',fontSize:11,marginLeft:'auto'}}>{timeAgo(c.created_at)}</span>
+              </div>
+              <div style={{fontSize:14,color:'#374151',lineHeight:1.6}}>{c.text}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <input value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Write a comment…" onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&postComment()}/>
+          <button className="btn-primary" onClick={postComment} disabled={postingComment} style={{whiteSpace:'nowrap'}}>{postingComment?'…':'Post'}</button>
+        </div>
+        <div style={{fontSize:11,color:'#9ca3af',marginTop:5}}>Enter to post</div>
+      </>}
+
+      {/* ── Status History ── */}
+      {tab==='history'&&task&&<>
+        <div style={{fontSize:13,color:'#6b7280',marginBottom:14}}>
+          Full audit trail of every status change on this task.
+        </div>
+        {!history.length&&<div style={{color:'#6b7280',fontSize:14,textAlign:'center',padding:32}}>No status changes recorded yet.</div>}
+        {history.map((h,i)=>{
+          const oldS=STATUS_MAP[h.old_status];
+          const newS=STATUS_MAP[h.new_status];
+          return(
+            <div key={h.id} className="history-item">
+              <div style={{width:28,height:28,borderRadius:'50%',background:'#f0f0ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>
+                {i===0?'🕐':'↕'}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
+                  <span className={'badge '+(oldS?.cls||'s-todo')}>{oldS?.icon} {oldS?.label||h.old_status}</span>
+                  <span style={{color:'#9ca3af',fontSize:13}}>→</span>
+                  <span className={'badge '+(newS?.cls||'s-todo')}>{newS?.icon} {newS?.label||h.new_status}</span>
+                </div>
+                <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>
+                  by <strong>{h.changed_by?.username||'unknown'}</strong> · {timeAgo(h.changed_at)} ({new Date(h.changed_at).toLocaleString()})
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </>}
+    </Modal>
+  );
+}
+
+/* ── Invite Panel ────────────────────────────────────────────────────────────── */
+function InvitePanel({projectId,onDone}){
+  const [email,setEmail]=React.useState('');
+  const [role,setRole]=React.useState('member');
+  const [results,setResults]=React.useState([]);
+  const [msg,setMsg]=React.useState('');
+  const [err,setErr]=React.useState('');
+  const [loading,setLoading]=React.useState(false);
+  const debRef=React.useRef(null);
+
+  const onEmailChange=val=>{
+    setEmail(val);setMsg('');setErr('');
+    clearTimeout(debRef.current);
+    if(val.length>=2) debRef.current=setTimeout(async()=>{
+      try{setResults(await api('/users/search/?q='+encodeURIComponent(val)));}catch(e){}
+    },300);
+    else setResults([]);
+  };
+
+  const doInvite=async(ov)=>{
+    const target=(ov||email).trim();
+    if(!target){setErr('Enter an email address');return;}
+    setLoading(true);setMsg('');setErr('');
+    try{
+      const res=await api('/projects/'+projectId+'/invite/',{method:'POST',body:JSON.stringify({email:target,role})});
+      setMsg(res.status==='added'?'✅ '+res.user.username+' added instantly — already on TaskFlow':'📧 Invite sent to '+target);
+      setEmail('');setResults([]);onDone();
+    }catch(e){setErr(e.error||e.detail||Object.values(e)[0]||'Error');}
+    setLoading(false);
+  };
+
+  return(
+    <div className="card" style={{marginBottom:16}}>
+      <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>Invite Member</div>
+      <div style={{fontSize:13,color:'#6b7280',marginBottom:12}}>Email already on TaskFlow → added instantly. New email → invite link sent.</div>
+      <div style={{display:'flex',gap:10,alignItems:'flex-end',position:'relative'}}>
+        <div style={{flex:1,position:'relative'}}>
+          <label>Email address</label>
+          <input type="email" placeholder="colleague@company.com" value={email} onChange={e=>onEmailChange(e.target.value)} onKeyDown={e=>e.key==='Enter'&&doInvite()}/>
+          {results.length>0&&(
+            <div style={{position:'absolute',top:'100%',left:0,right:0,background:'#fff',border:'1px solid #e5e7eb',borderRadius:9,boxShadow:'0 6px 24px rgba(0,0,0,.13)',zIndex:300,marginTop:4}}>
+              {results.map(u=>(
+                <div key={u.id} onClick={()=>{setEmail(u.email);setResults([]);}}
+                  style={{padding:'10px 14px',cursor:'pointer',display:'flex',alignItems:'center',gap:10,borderBottom:'1px solid #f3f4f6'}}
+                  onMouseEnter={e=>e.currentTarget.style.background='#f5f3ff'}
+                  onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
+                  <Avatar name={u.username} size={30} bg="#ede9fe" color="#6d28d9"/>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600}}>{u.username}</div>
+                    <div style={{fontSize:12,color:'#16a34a'}}>{u.email} · Already on TaskFlow ✓</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{width:130}}><label>Role</label><select value={role} onChange={e=>setRole(e.target.value)}><option value="member">Member</option><option value="admin">Admin</option></select></div>
+        <button className="btn-primary" onClick={()=>doInvite()} disabled={loading||!email.trim()}>{loading?'…':'Invite'}</button>
+      </div>
+      {msg&&<div className="success-msg">{msg}</div>}
+      {err&&<div className="error-msg">{err}</div>}
+    </div>
+  );
+}
+
+function PendingInvites({projectId}){
+  const [invites,setInvites]=React.useState([]);
+  const load=()=>api('/projects/'+projectId+'/invites/').then(setInvites).catch(()=>{});
+  React.useEffect(()=>{load();},[projectId]);
+  const cancel=async id=>{await api('/projects/'+projectId+'/invites/'+id+'/',{method:'DELETE'}).catch(()=>{});load();};
+  const pending=invites.filter(i=>i.status==='pending');
+  if(!pending.length) return null;
+  return(
+    <div className="card" style={{padding:0,marginTop:16}}>
+      <div style={{padding:'12px 16px',fontWeight:700,fontSize:13,borderBottom:'1px solid #f3f4f6',color:'#6b7280'}}>📬 Pending Invites ({pending.length})</div>
+      {pending.map(inv=>(
+        <div key={inv.id} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',borderBottom:'1px solid #f3f4f6'}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:600}}>{inv.email}</div>
+            <div style={{fontSize:12,color:'#6b7280'}}>by {inv.invited_by?.username} · {inv.role}</div>
+          </div>
+          <span className="badge s-ongoing">pending</span>
+          <button className="btn-danger btn-sm" onClick={()=>cancel(inv.id)}>Cancel</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Kanban Board ─────────────────────────────────────────────────────────────── */
+function KanbanBoard({tasks,members,projectId,onUpdate,currentUser}){
+  const [editTask,setEditTask]=React.useState(null);
+
+  const moveTask=async(task,newStatus)=>{
+    await api('/tasks/'+task.id+'/',{method:'PATCH',body:JSON.stringify({status:newStatus})}).catch(console.error);
+    onUpdate();
+  };
+
+  return(
+    <>
+      <div className="kanban-wrap">
+        {STATUSES.map(s=>{
+          const col=tasks.filter(t=>t.status===s.key);
+          return(
+            <div key={s.key} className="kanban-col">
+              <div className="kanban-col-header">
+                <span style={{color:s.col}}>{s.icon} {s.label}</span>
+                <span style={{background:'#fff',borderRadius:99,padding:'2px 7px',fontSize:11,color:'#6b7280',fontWeight:700,boxShadow:'0 1px 3px rgba(0,0,0,.1)'}}>{col.length}</span>
+              </div>
+              {col.length===0&&<div style={{fontSize:11,color:'#d1d5db',textAlign:'center',padding:'14px 8px',border:'1px dashed #e5e7eb',borderRadius:8}}>Drop here</div>}
+              {col.map(t=>(
+                <div key={t.id} className="kanban-card" style={{borderLeftColor:s.col}} onClick={()=>setEditTask(t)}>
+                  <div style={{fontWeight:600,fontSize:12,marginBottom:5,lineHeight:1.4}}>{t.title}</div>
+                  {t.description&&<div style={{fontSize:11,color:'#6b7280',marginBottom:6,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{t.description}</div>}
+                  <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:5,alignItems:'center'}}>
+                    <PriBadge p={t.priority}/>
+                    {t.assigned_to&&<span style={{fontSize:11,color:'#6b7280'}}>@{t.assigned_to.username}</span>}
+                  </div>
+                  {t.due_date&&<div style={{fontSize:11,color:t.is_overdue?'#ef4444':'#9ca3af',marginBottom:5}}>{t.is_overdue?'⚠️':'📅'} {t.due_date}</div>}
+                  {t.tags&&<div style={{marginBottom:5}}><Tags tags={t.tags}/></div>}
+                  {t.comment_count>0&&<div style={{fontSize:11,color:'#9ca3af'}}>💬 {t.comment_count}</div>}
+                  {/* Quick move */}
+                  <div style={{display:'flex',gap:2,marginTop:8,flexWrap:'wrap'}}>
+                    {STATUSES.filter(s2=>s2.key!==s.key).map(s2=>(
+                      <button key={s2.key} className="btn-ghost btn-xs" title={'→ '+s2.label}
+                        onClick={e=>{e.stopPropagation();moveTask(t,s2.key);}}>
+                        {s2.icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+      {editTask&&<TaskModal projectId={projectId} members={members} task={editTask} currentUser={currentUser}
+        onClose={()=>setEditTask(null)} onSave={()=>{setEditTask(null);onUpdate();}}/>}
+    </>
+  );
+}
+
+/* ── Project Detail ───────────────────────────────────────────────────────────── */
+function ProjectDetail({project,onBack,currentUser}){
+  const [tasks,setTasks]=React.useState([]);
+  const [members,setMembers]=React.useState([]);
+  const [tab,setTab]=React.useState('board');
+  const [showTask,setShowTask]=React.useState(false);
+  const [editTask,setEditTask]=React.useState(null);
+  const [filterStatus,setFilterStatus]=React.useState('');
+  const [filterPri,setFilterPri]=React.useState('');
+  const [filterAssignee,setFilterAssignee]=React.useState('');
+  const [search,setSearch]=React.useState('');
+  const isAdmin=project.my_role==='admin';
+
+  const loadTasks=()=>api('/projects/'+project.id+'/tasks/').then(d=>setTasks(d.results||d)).catch(console.error);
+  const loadMembers=()=>api('/projects/'+project.id+'/members/').then(d=>setMembers(d.results||d)).catch(console.error);
+  React.useEffect(()=>{loadTasks();loadMembers();},[project.id]);
+
+  const delTask=async id=>{
+    if(!window.confirm('Delete this task?')) return;
+    await api('/tasks/'+id+'/',{method:'DELETE'}).catch(console.error);
+    loadTasks();
+  };
+  const removeMember=async mid=>{
+    if(!window.confirm('Remove this member?')) return;
+    await api('/projects/'+project.id+'/members/'+mid+'/',{method:'DELETE'}).catch(console.error);
+    loadMembers();
+  };
+  const quickStatus=async(t,status)=>{
+    await api('/tasks/'+t.id+'/',{method:'PATCH',body:JSON.stringify({status})}).catch(console.error);
+    loadTasks();
+  };
+
+  const filtered=tasks.filter(t=>{
+    if(filterStatus&&t.status!==filterStatus) return false;
+    if(filterPri&&t.priority!==filterPri) return false;
+    if(filterAssignee&&String(t.assigned_to?.id)!==filterAssignee) return false;
+    if(search&&!t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const done=tasks.filter(t=>['completed','dismissed'].includes(t.status)).length;
+  const pct=tasks.length?Math.round((done/tasks.length)*100):0;
+
+  return(
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6,flexWrap:'wrap'}}>
+        <button className="btn-secondary btn-sm" onClick={onBack}>← Back</button>
+        <h2 style={{fontWeight:800,fontSize:22}}>{project.name}</h2>
+        <span className={'badge badge-'+project.my_role}>{project.my_role}</span>
+      </div>
+      {project.description&&<div style={{color:'#6b7280',fontSize:14,marginBottom:12}}>{project.description}</div>}
+
+      {/* Progress */}
+      <div className="card" style={{padding:'13px 18px',marginBottom:14,display:'flex',alignItems:'center',gap:16}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:12,color:'#6b7280',marginBottom:6}}>{done} of {tasks.length} tasks closed</div>
+          <ProgressBar value={pct} color="#22c55e"/>
+        </div>
+        <div style={{fontWeight:800,fontSize:20,color:'#22c55e',minWidth:50,textAlign:'right'}}>{pct}%</div>
+      </div>
+
+      {/* Status pill filters */}
+      <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+        {STATUSES.map(s=>{
+          const cnt=tasks.filter(t=>t.status===s.key).length;
+          if(!cnt) return null;
+          return(
+            <span key={s.key} className={'badge '+s.cls}
+              style={{cursor:'pointer',fontSize:12,padding:'4px 12px',outline:filterStatus===s.key?'2px solid '+s.col:'none'}}
+              onClick={()=>setFilterStatus(filterStatus===s.key?'':s.key)}>
+              {s.icon} {s.label}: {cnt}
+            </span>
+          );
+        })}
+        {filterStatus&&<span style={{fontSize:12,color:'#4f46e5',cursor:'pointer',alignSelf:'center'}} onClick={()=>setFilterStatus('')}>✕ Clear</span>}
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:'flex',gap:8,marginBottom:18,alignItems:'center',flexWrap:'wrap'}}>
+        {[{id:'board',label:'🗂 Board'},{id:'list',label:'📋 List'},{id:'members',label:'👥 Members'}].map(t2=>(
+          <button key={t2.id} className={'tab-btn '+(tab===t2.id?'tab-active':'tab-inactive')} onClick={()=>setTab(t2.id)}>{t2.label}</button>
+        ))}
+        <button className="btn-primary btn-sm" style={{marginLeft:'auto'}} onClick={()=>setShowTask(true)}>+ Add Task</button>
+      </div>
+
+      {/* Board */}
+      {tab==='board'&&<KanbanBoard tasks={tasks} members={members} projectId={project.id} onUpdate={loadTasks} currentUser={currentUser}/>}
+
+      {/* List */}
+      {tab==='list'&&<>
+        <div style={{display:'flex',gap:10,marginBottom:14,flexWrap:'wrap'}}>
+          <input style={{maxWidth:190}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          <select style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+            <option value="">All Statuses</option>
+            {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+          </select>
+          <select style={{width:145}} value={filterPri} onChange={e=>setFilterPri(e.target.value)}>
+            <option value="">All Priorities</option>
+            {PRIORITIES.map(p=><option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+          <select style={{width:160}} value={filterAssignee} onChange={e=>setFilterAssignee(e.target.value)}>
+            <option value="">All Assignees</option>
+            {members.map(m=><option key={m.user.id} value={String(m.user.id)}>{m.user.username}</option>)}
+          </select>
+        </div>
+        <div className="card" style={{padding:0}}>
+          {!filtered.length&&<div style={{padding:36,textAlign:'center',color:'#6b7280'}}>No tasks match filters</div>}
+          {filtered.map(t=>(
+            <div key={t.id} className={'task-row'+(t.is_overdue?' overdue-stripe':'')}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:600,fontSize:14,marginBottom:3}}>{t.title}</div>
+                <div style={{display:'flex',gap:10,fontSize:12,color:'#9ca3af',flexWrap:'wrap',alignItems:'center'}}>
+                  {t.assigned_to?<span>👤 @{t.assigned_to.username}</span>:<span style={{color:'#d97706'}}>👤 Unassigned</span>}
+                  {t.due_date&&<span style={{color:t.is_overdue?'#ef4444':'#9ca3af'}}>{t.is_overdue?'⚠️':'📅'} {t.due_date}</span>}
+                  {t.tags&&<Tags tags={t.tags}/>}
+                  {t.comment_count>0&&<span>💬 {t.comment_count}</span>}
+                </div>
+              </div>
+              <PriBadge p={t.priority}/>
+              <select style={{width:148,padding:'4px 8px',fontSize:12,borderRadius:6,border:'1px solid #ddd'}}
+                value={t.status} onChange={e=>quickStatus(t,e.target.value)}>
+                {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+              </select>
+              <button className="btn-ghost btn-sm" onClick={()=>setEditTask(t)}>✏️</button>
+              {(isAdmin||(t.created_by&&t.created_by.id===currentUser?.id))&&(
+                <button className="btn-danger btn-sm" onClick={()=>delTask(t.id)}>🗑</button>
+              )}
+            </div>
+          ))}
+        </div>
+      </>}
+
+      {/* Members */}
+      {tab==='members'&&<>
+        {isAdmin&&<InvitePanel projectId={project.id} onDone={loadMembers}/>}
+        <div className="card" style={{padding:0}}>
+          <div style={{padding:'12px 16px',fontWeight:700,fontSize:13,borderBottom:'1px solid #f3f4f6'}}>👥 Team ({members.length})</div>
+          {members.map(m=>(
+            <div key={m.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',borderBottom:'1px solid #f3f4f6'}}>
+              <Avatar name={m.user.username} size={38} bg="#ede9fe" color="#6d28d9"/>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:600,fontSize:14}}>{m.user.first_name?m.user.first_name+' '+m.user.last_name:m.user.username}</div>
+                <div style={{fontSize:12,color:'#6b7280'}}>@{m.user.username} · {m.user.email||'No email'}</div>
+              </div>
+              <span className={'badge badge-'+m.role}>{m.role}</span>
+              {isAdmin&&currentUser&&m.user.id!==currentUser.id&&(
+                <button className="btn-danger btn-sm" onClick={()=>removeMember(m.id)}>Remove</button>
+              )}
+            </div>
+          ))}
+        </div>
+        {isAdmin&&<PendingInvites projectId={project.id}/>}
+      </>}
+
+      {showTask&&<TaskModal projectId={project.id} members={members} currentUser={currentUser}
+        onClose={()=>setShowTask(false)} onSave={()=>{setShowTask(false);loadTasks();}}/>}
+      {editTask&&<TaskModal projectId={project.id} members={members} task={editTask} currentUser={currentUser}
+        onClose={()=>setEditTask(null)} onSave={()=>{setEditTask(null);loadTasks();}}/>}
+    </div>
+  );
+}
+
+/* ── Projects List ─────────────────────────────────────────────────────────────── */
+function Projects({onSelect}){
+  const [projects,setProjects]=React.useState([]);
+  const [showNew,setShowNew]=React.useState(false);
+  const [form,setForm]=React.useState({name:'',description:''});
+  const [search,setSearch]=React.useState('');
+  const [err,setErr]=React.useState('');
+
+  const load=()=>api('/projects/').then(d=>setProjects(d.results||d)).catch(console.error);
+  React.useEffect(()=>{load();},[]);
+
+  const create=async()=>{
+    if(!form.name.trim()){setErr('Name is required');return;}
+    setErr('');
+    try{await api('/projects/',{method:'POST',body:JSON.stringify(form)});setShowNew(false);setForm({name:'',description:''});load();}
+    catch(e){setErr(e.name?.[0]||e.detail||JSON.stringify(e));}
+  };
+  const del=async(id,e)=>{
+    e.stopPropagation();
+    if(!window.confirm('Delete this project and ALL its tasks?')) return;
+    await api('/projects/'+id+'/',{method:'DELETE'}).catch(console.error);load();
+  };
+
+  const filtered=projects.filter(p=>p.name.toLowerCase().includes(search.toLowerCase()));
+
+  return(
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:10}}>
+        <div>
+          <h2 style={{fontWeight:800,fontSize:24}}>Projects</h2>
+          <div style={{color:'#6b7280',fontSize:14,marginTop:4}}>{projects.length} project{projects.length!==1?'s':''}</div>
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <input style={{width:200}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          <button className="btn-primary" onClick={()=>setShowNew(true)}>+ New Project</button>
+        </div>
+      </div>
+      {!filtered.length&&<div className="card" style={{textAlign:'center',color:'#6b7280',padding:48}}>{projects.length===0?'No projects yet. Create your first one!':'No projects match.'}</div>}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(270px,1fr))',gap:16}}>
+        {filtered.map(p=>(
+          <div key={p.id} className="card" style={{cursor:'pointer',borderTop:'4px solid #4f46e5'}}
+            onClick={()=>onSelect(p)}
+            onMouseEnter={e=>e.currentTarget.style.boxShadow='0 4px 16px rgba(79,70,229,.15)'}
+            onMouseLeave={e=>e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.07)'}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+              <div style={{fontWeight:700,fontSize:15,flex:1,marginRight:8}}>{p.name}</div>
+              {p.my_role==='admin'&&<button className="btn-danger btn-xs" onClick={e=>del(p.id,e)}>Delete</button>}
+            </div>
+            <div style={{color:'#6b7280',fontSize:13,minHeight:36,marginBottom:12,lineHeight:1.5}}>{p.description||'No description'}</div>
+            <ProgressBar value={p.progress||0} color="#4f46e5"/>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:10,fontSize:12,color:'#6b7280'}}>
+              <span>👥 {p.members?.length||0} · 📋 {p.task_count} tasks</span>
+              <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <span style={{fontWeight:700,color:'#4f46e5'}}>{p.progress||0}%</span>
+                <span className={'badge badge-'+p.my_role}>{p.my_role}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {showNew&&(
+        <Modal title="New Project" onClose={()=>{setShowNew(false);setErr('');}}>
+          <div className="form-group"><label>Project Name *</label><input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} autoFocus placeholder="e.g. Website Redesign"/></div>
+          <div className="form-group"><label>Description</label><textarea rows={3} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="What is this project about?"/></div>
+          {err&&<div className="error-msg">{err}</div>}
+          <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}}>
+            <button className="btn-secondary" onClick={()=>{setShowNew(false);setErr('');}}>Cancel</button>
+            <button className="btn-primary" onClick={create}>Create Project</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ── My Tasks ──────────────────────────────────────────────────────────────────── */
+function MyTasks({currentUser}){
+  const [tasks,setTasks]=React.useState([]);
+  const [projects,setProjects]=React.useState([]);
+  const [projectMap,setProjectMap]=React.useState({});
+  const [showNew,setShowNew]=React.useState(false);
+  const [editTask,setEditTask]=React.useState(null);
+  const [view,setView]=React.useState('list');
+  const [filterStatus,setFilterStatus]=React.useState('');
+  const [filterPri,setFilterPri]=React.useState('');
+  const [filterProject,setFilterProject]=React.useState('');
+  const [search,setSearch]=React.useState('');
+
+  const loadProjects=()=>api('/projects/').then(d=>{
+    const list=d.results||d;setProjects(list);
+    const map={};list.forEach(p=>{map[p.id]=p.name;});setProjectMap(map);
+  }).catch(console.error);
+
+  const loadTasks=()=>api('/tasks/').then(d=>{
+    const all=d.results||d;
+    setTasks(all.filter(t=>(t.assigned_to&&t.assigned_to.id===currentUser?.id)||(t.created_by&&t.created_by.id===currentUser?.id)));
+  }).catch(console.error);
+
+  React.useEffect(()=>{if(currentUser){loadProjects();loadTasks();}},[currentUser]);
+
+  const updateStatus=async(task,status)=>{
+    await api('/tasks/'+task.id+'/',{method:'PATCH',body:JSON.stringify({status})}).catch(console.error);loadTasks();
+  };
+  const delTask=async id=>{
+    if(!window.confirm('Delete?')) return;
+    await api('/tasks/'+id+'/',{method:'DELETE'}).catch(console.error);loadTasks();
+  };
+
+  const filtered=tasks.filter(t=>{
+    if(filterStatus&&t.status!==filterStatus) return false;
+    if(filterPri&&t.priority!==filterPri) return false;
+    if(filterProject&&String(t.project)!==filterProject) return false;
+    if(search&&!t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const counts={};STATUSES.forEach(s=>{counts[s.key]=tasks.filter(t=>t.status===s.key).length;});
+  const overdue=tasks.filter(t=>t.is_overdue).length;
+
+  return(
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16,flexWrap:'wrap',gap:10}}>
+        <div>
+          <h2 style={{fontWeight:800,fontSize:24}}>My Tasks</h2>
+          <div style={{color:'#6b7280',fontSize:14,marginTop:4}}>{tasks.length} tasks across {projects.length} project{projects.length!==1?'s':''}</div>
+        </div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <button className={'tab-btn '+(view==='list'?'tab-active':'tab-inactive')} onClick={()=>setView('list')}>📋 List</button>
+          <button className={'tab-btn '+(view==='board'?'tab-active':'tab-inactive')} onClick={()=>setView('board')}>🗂 Board</button>
+          <button className="btn-primary" onClick={()=>setShowNew(true)} disabled={!projects.length}>+ Add Task</button>
+        </div>
+      </div>
+
+      {/* Status pills */}
+      <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+        {STATUSES.map(s=>counts[s.key]>0&&(
+          <span key={s.key} className={'badge '+s.cls}
+            style={{cursor:'pointer',fontSize:12,padding:'4px 12px',outline:filterStatus===s.key?'2px solid '+s.col:'none'}}
+            onClick={()=>setFilterStatus(filterStatus===s.key?'':s.key)}>
+            {s.icon} {s.label}: {counts[s.key]}
+          </span>
+        ))}
+        {overdue>0&&<span className="badge p-critical" style={{fontSize:12,padding:'4px 12px'}}>⚠️ Overdue: {overdue}</span>}
+        {filterStatus&&<span style={{fontSize:12,color:'#4f46e5',cursor:'pointer',alignSelf:'center'}} onClick={()=>setFilterStatus('')}>✕ Clear</span>}
+      </div>
+
+      {/* Filters */}
+      <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <input style={{maxWidth:180}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        <select style={{width:155}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+          <option value="">All Statuses</option>
+          {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+        </select>
+        <select style={{width:140}} value={filterPri} onChange={e=>setFilterPri(e.target.value)}>
+          <option value="">All Priorities</option>
+          {PRIORITIES.map(p=><option key={p.key} value={p.key}>{p.label}</option>)}
+        </select>
+        <select style={{width:175}} value={filterProject} onChange={e=>setFilterProject(e.target.value)}>
+          <option value="">All Projects</option>
+          {projects.map(p=><option key={p.id} value={String(p.id)}>{p.name}</option>)}
+        </select>
+      </div>
+
+      {view==='board'&&<KanbanBoard tasks={filtered} members={[]} projectId={null} onUpdate={loadTasks} currentUser={currentUser}/>}
+
+      {view==='list'&&(
+        <div className="card" style={{padding:0}}>
+          {!filtered.length&&<div style={{padding:48,textAlign:'center',color:'#6b7280'}}>{tasks.length===0?<>No tasks. Click <strong>+ Add Task</strong>.</>:'No tasks match filters.'}</div>}
+          {filtered.map(t=>(
+            <div key={t.id} className={'task-row'+(t.is_overdue?' overdue-stripe':'')}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:600,fontSize:14,marginBottom:3}}>{t.title}</div>
+                <div style={{display:'flex',gap:10,fontSize:12,color:'#9ca3af',flexWrap:'wrap',alignItems:'center'}}>
+                  <span>📁 {projectMap[t.project]||'Project #'+t.project}</span>
+                  {t.assigned_to?<span>👤 {t.assigned_to.id===currentUser?.id?'You':'@'+t.assigned_to.username}</span>:<span style={{color:'#d97706'}}>👤 Unassigned</span>}
+                  {t.due_date&&<span style={{color:t.is_overdue?'#ef4444':'#9ca3af'}}>{t.is_overdue?'⚠️ Overdue:':'📅'} {t.due_date}</span>}
+                  {t.tags&&<Tags tags={t.tags}/>}
+                  {t.comment_count>0&&<span>💬 {t.comment_count}</span>}
+                </div>
+              </div>
+              <PriBadge p={t.priority}/>
+              <select style={{width:150,padding:'4px 8px',fontSize:12,borderRadius:6,border:'1px solid #ddd'}}
+                value={t.status} onChange={e=>updateStatus(t,e.target.value)}>
+                {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+              </select>
+              <button className="btn-ghost btn-sm" onClick={()=>setEditTask(t)}>✏️ Edit</button>
+              <button className="btn-danger btn-sm" onClick={()=>delTask(t.id)}>🗑</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showNew&&<TaskModal projects={projects} members={[]} currentUser={currentUser}
+        onClose={()=>setShowNew(false)} onSave={()=>{setShowNew(false);loadTasks();}}/>}
+      {editTask&&<TaskModal projectId={editTask.project} members={[]} task={editTask} currentUser={currentUser}
+        onClose={()=>setEditTask(null)} onSave={()=>{setEditTask(null);loadTasks();}}/>}
+    </div>
+  );
+}
+
+/* ── Dashboard ─────────────────────────────────────────────────────────────────── */
+function Dashboard({onNavigate}){
+  const [stats,setStats]=React.useState(null);
+  const [projects,setProjects]=React.useState([]);
+  const [attention,setAttention]=React.useState([]);
+
+  React.useEffect(()=>{
+    api('/dashboard/').then(setStats).catch(console.error);
+    api('/projects/').then(d=>setProjects((d.results||d).slice(0,4))).catch(console.error);
+    api('/tasks/').then(d=>{
+      const all=d.results||d;
+      setAttention(all.filter(t=>t.is_overdue||t.status==='blocked').slice(0,6));
+    }).catch(console.error);
+  },[]);
+
+  if(!stats) return<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'#6b7280'}}>Loading dashboard…</div>;
+
+  const statCards=[
+    {label:'Projects',    val:stats.total_projects, color:'#4f46e5',icon:'📁'},
+    {label:'Total Tasks', val:stats.total_tasks,    color:'#0891b2',icon:'📋'},
+    {label:'My Tasks',    val:stats.my_tasks,       color:'#7c3aed',icon:'✅'},
+    {label:'Overdue',     val:stats.overdue,        color:'#dc2626',icon:'⚠️'},
+  ];
+
+  const statusBreakdown=STATUSES.map(s=>({...s,count:(stats.status_counts||{})[s.key]||0})).filter(s=>s.count>0);
+
+  return(
+    <div>
+      <div style={{marginBottom:22}}>
+        <h2 style={{fontWeight:800,fontSize:24}}>Dashboard</h2>
+        <div style={{color:'#6b7280',fontSize:14,marginTop:4}}>Here's what's happening across your projects</div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:14,marginBottom:22}}>
+        {statCards.map(c=>(
+          <div key={c.label} className="stat-card" style={{borderTopColor:c.color}}>
+            <div style={{fontSize:26,marginBottom:4}}>{c.icon}</div>
+            <div style={{fontSize:30,fontWeight:800,color:c.color,lineHeight:1}}>{c.val}</div>
+            <div style={{fontSize:13,color:'#6b7280',marginTop:4}}>{c.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:16}}>
+        <div className="card">
+          <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>My Task Breakdown</div>
+          {!statusBreakdown.length&&<div style={{color:'#6b7280',fontSize:13}}>No tasks assigned yet</div>}
+          {statusBreakdown.map(s=>(
+            <div key={s.key} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+              <span className={'badge '+s.cls} style={{minWidth:105,fontSize:11}}>{s.icon} {s.label}</span>
+              <div style={{flex:1}}><ProgressBar value={stats.my_tasks?Math.round((s.count/stats.my_tasks)*100):0} color={s.col}/></div>
+              <span style={{fontWeight:700,fontSize:13,minWidth:20,textAlign:'right'}}>{s.count}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>⚠️ Needs Attention</div>
+          {!attention.length&&<div style={{color:'#6b7280',fontSize:13}}>No overdue or blocked tasks 🎉</div>}
+          {attention.map(t=>(
+            <div key={t.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:'1px solid #f3f4f6'}}>
+              <StatusBadge s={t.status}/>
+              <div style={{flex:1,fontSize:13,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.title}</div>
+              {t.due_date&&<span style={{fontSize:11,color:'#dc2626',whiteSpace:'nowrap'}}>📅 {t.due_date}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {projects.length>0&&<>
+        <div style={{fontWeight:700,fontSize:15,marginBottom:12}}>Recent Projects</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:12}}>
+          {projects.map(p=>(
+            <div key={p.id} className="card" style={{cursor:'pointer',borderLeft:'4px solid #4f46e5',padding:'14px 16px'}}
+              onClick={()=>onNavigate('projects',p)}>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>{p.name}</div>
+              <div style={{fontSize:12,color:'#6b7280',marginBottom:10}}>{p.task_count} tasks · {p.members?.length||0} members</div>
+              <ProgressBar value={p.progress||0} color="#4f46e5"/>
+              <div style={{fontSize:11,color:'#6b7280',marginTop:4,textAlign:'right'}}>{p.progress||0}% complete</div>
+            </div>
+          ))}
+        </div>
+      </>}
+    </div>
+  );
+}
+
+/* ── App Shell ─────────────────────────────────────────────────────────────────── */
+function App(){
+  const inviteMatch=window.location.pathname.match(/^\/invite\/([a-f0-9-]{36})$/i);
+  if(inviteMatch) return <AcceptInvitePage token={inviteMatch[1]}/>;
+
+  const [authed,setAuthed]=React.useState(!!getToken());
+  const [user,setUser]=React.useState(null);
+  const [page,setPage]=React.useState('dashboard');
+  const [selectedProject,setSelectedProject]=React.useState(null);
+  const [unreadCount,setUnreadCount]=React.useState(0);
+  const [showNotifs,setShowNotifs]=React.useState(false);
+  const pollRef=React.useRef(null);
+
+  React.useEffect(()=>{
+    if(authed){
+      api('/auth/me/').then(setUser).catch(()=>{localStorage.removeItem('tf_token');setAuthed(false);});
+      fetchUnread();
+      // Poll for new notifications every 30 seconds
+      pollRef.current=setInterval(fetchUnread,30000);
+    }
+    return()=>clearInterval(pollRef.current);
+  },[authed]);
+
+  const fetchUnread=()=>{
+    api('/notifications/unread/').then(d=>setUnreadCount(d.count||0)).catch(()=>{});
+  };
+
+  const logout=()=>{
+    clearInterval(pollRef.current);
+    localStorage.removeItem('tf_token');
+    setAuthed(false);setUser(null);setPage('dashboard');setSelectedProject(null);setUnreadCount(0);
+  };
+
+  const navigate=(p,proj)=>{setPage(p);setSelectedProject(proj||null);};
+
+  if(!authed) return <AuthPage onLogin={()=>setAuthed(true)}/>;
+
+  const nav=[
+    {id:'dashboard',icon:'📊',label:'Dashboard'},
+    {id:'projects', icon:'📁',label:'Projects'},
+    {id:'mytasks',  icon:'✅',label:'My Tasks'},
+  ];
+
+  return(
+    <div style={{display:'flex'}}>
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="sidebar-logo">
+          <div style={{fontWeight:800,fontSize:21,color:'#fff',letterSpacing:'-0.5px'}}>⚡ TaskFlow</div>
+          {user&&<div style={{fontSize:12,color:'rgba(255,255,255,.45)',marginTop:4}}>@{user.username}</div>}
+        </div>
+        <div style={{padding:'12px 8px',flex:1}}>
+          {nav.map(n=>(
+            <div key={n.id} className={'nav-item'+(page===n.id&&!selectedProject?' active':'')}
+              onClick={()=>navigate(n.id)}>
+              <span style={{fontSize:16}}>{n.icon}</span>{n.label}
+            </div>
+          ))}
+        </div>
+        <div style={{padding:'14px 16px',borderTop:'1px solid rgba(255,255,255,.1)'}}>
+          {/* Notification Bell */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              {user&&<Avatar name={user.username} size={32} color="#fff" bg="#4f46e5"/>}
+              <div>
+                <div style={{color:'#fff',fontSize:13,fontWeight:600}}>{user?.first_name||user?.username}</div>
+                <div style={{color:'rgba(255,255,255,.4)',fontSize:11}}>@{user?.username}</div>
+              </div>
+            </div>
+            <button className="notif-bell" onClick={()=>setShowNotifs(s=>!s)} title="Notifications">
+              🔔
+              {unreadCount>0&&<span className="notif-badge">{unreadCount>99?'99+':unreadCount}</span>}
+            </button>
+          </div>
+          <button className="btn-secondary" style={{width:'100%',fontSize:13}} onClick={logout}>Sign Out</button>
+        </div>
+      </div>
+
+      {/* Notification Panel */}
+      {showNotifs&&(
+        <NotificationPanel
+          onClose={()=>setShowNotifs(false)}
+          onCountChange={(n)=>{n!==undefined?setUnreadCount(n):fetchUnread();}}
+        />
+      )}
+
+      {/* Main content */}
+      <div className="main" style={{flex:1}}>
+        {page==='dashboard'&&<Dashboard onNavigate={navigate}/>}
+        {page==='projects'&&!selectedProject&&<Projects onSelect={p=>navigate('projects',p)}/>}
+        {page==='projects'&&selectedProject&&(
+          <ProjectDetail project={selectedProject} onBack={()=>navigate('projects')} currentUser={user}/>
+        )}
+        {page==='mytasks'&&<MyTasks currentUser={user}/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+{%endverbatim%}
+</script>
+</body>
+</html>
