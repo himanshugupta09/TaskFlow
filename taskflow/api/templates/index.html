@@ -9,7 +9,26 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+/* Theme variables */
+:root{
+  --bg: #f0f2f5;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --card-bg: #ffffff;
+  --sidebar-bg: #1e1b4b;
+  --sidebar-text: rgba(255,255,255,.9);
+  --accent: #4f46e5;
+}
+html[data-theme="dark"]{
+  --bg: #071023;
+  --text: #e6eef8;
+  --muted: #93a3b8;
+  --card-bg: #071425;
+  --sidebar-bg: #071029;
+  --sidebar-text: rgba(255,255,255,.9);
+  --accent: #8b5cf6;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 input,select,textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;background:#fff;color:#1a1a1a;font-family:inherit}
 input:focus,select:focus,textarea:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12)}
 button{cursor:pointer;border:none;border-radius:7px;font-size:13px;font-weight:600;padding:8px 16px;transition:all .15s;font-family:inherit}
@@ -42,11 +61,11 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .badge-member{background:#f0fdf4;color:#15803d}.badge-member::before{background:#22c55e}
 
 /* Layout */
-.sidebar{width:230px;background:#1e1b4b;height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:20}
-.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
-.nav-item{padding:10px 16px;cursor:pointer;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:10px;margin:2px 8px;border-radius:8px;transition:all .15s}
-.nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
-.nav-item.active{background:#4f46e5;color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.5)}
+.sidebar{width:230px;background:var(--sidebar-bg);height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:20}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-item{padding:10px 16px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--sidebar-text);display:flex;align-items:center;gap:10px;margin:2px 8px;border-radius:8px;transition:all .15s}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--sidebar-text)}
+.nav-item.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.2)}
 .main{margin-left:230px;padding:28px;min-height:100vh}
 
 /* Modal */
@@ -1176,6 +1195,15 @@ function App(){
   const [showNotifs,setShowNotifs]=React.useState(false);
   const pollRef=React.useRef(null);
 
+  // Theme (light / dark)
+  const [theme,setTheme]=React.useState(()=>localStorage.getItem('tf_theme')||'light');
+  React.useEffect(()=>{
+    if(theme==='dark') document.documentElement.setAttribute('data-theme','dark');
+    else document.documentElement.removeAttribute('data-theme');
+    try{localStorage.setItem('tf_theme',theme);}catch(e){}
+  },[theme]);
+  const toggleTheme=()=>setTheme(t=>t==='dark'?'light':'dark');
+
   React.useEffect(()=>{
     if(authed){
       api('/auth/me/').then(setUser).catch(()=>{localStorage.removeItem('tf_token');setAuthed(false);});
@@ -1211,8 +1239,15 @@ function App(){
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-logo">
-          <div style={{fontWeight:800,fontSize:21,color:'#fff',letterSpacing:'-0.5px'}}>⚡ TaskFlow</div>
-          {user&&<div style={{fontSize:12,color:'rgba(255,255,255,.45)',marginTop:4}}>@{user.username}</div>}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div>
+              <div style={{fontWeight:800,fontSize:21,color:'var(--sidebar-text)',letterSpacing:'-0.5px'}}>⚡ TaskFlow</div>
+              {user&&<div style={{fontSize:12,color:'var(--muted)',marginTop:4}}>@{user.username}</div>}
+            </div>
+            <button className="btn-ghost btn-sm" onClick={toggleTheme} style={{background:'transparent',color:'var(--sidebar-text)'}} title="Toggle theme">
+              {theme==='dark'?'🌞':'🌙'}
+            </button>
+          </div>
         </div>
         <div style={{padding:'12px 8px',flex:1}}>
           {nav.map(n=>(
