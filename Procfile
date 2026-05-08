@@ -1,1 +1,1 @@
-web: sh start.sh
+web: python taskflow/manage.py migrate && python taskflow/manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:$PORT --workers 3 taskflow.wsgi
