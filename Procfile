@@ -1,1 +1,1 @@
-web: cd taskflow && python manage.py migrate && gunicorn taskflow.wsgi --log-file -
+web: python taskflow/manage.py migrate && gunicorn taskflow.wsgi --log-file -

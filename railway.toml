@@ -2,5 +2,5 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "cd taskflow && python manage.py migrate && gunicorn taskflow.wsgi --log-file -"
+startCommand = "python taskflow/manage.py migrate && gunicorn taskflow.wsgi --log-file -"
 healthcheckPath = "/"
