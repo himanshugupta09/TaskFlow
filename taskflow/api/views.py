@@ -27,13 +27,6 @@ def index(request):
     return render(request, 'index.html')
 
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def healthz(request):
-    """Lightweight healthcheck for deployment platforms."""
-    return Response({'status': 'ok'})
-
-
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
 @api_view(['POST'])
