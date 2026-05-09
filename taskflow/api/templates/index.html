@@ -28,23 +28,23 @@ html[data-theme="dark"]{
   --sidebar-text: rgba(255,255,255,.9);
   --accent: #8b5cf6;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-input,select,textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;background:#fff;color:#1a1a1a;font-family:inherit}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none;background:#fff;color:#1a1a1a;font-family:inherit;min-height:44px}
 input:focus,select:focus,textarea:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12)}
-button{cursor:pointer;border:none;border-radius:7px;font-size:13px;font-weight:600;padding:8px 16px;transition:all .15s;font-family:inherit}
+button{cursor:pointer;border:none;border-radius:7px;font-size:13px;font-weight:600;padding:10px 16px;transition:all .15s;font-family:inherit;min-height:44px}
 button:hover{opacity:.85}
 button:disabled{opacity:.4;cursor:not-allowed}
 .btn-primary{background:#4f46e5;color:#fff;box-shadow:0 1px 4px rgba(79,70,229,.3)}
 .btn-danger{background:#ef4444;color:#fff}
 .btn-secondary{background:#e5e7eb;color:#374151}
-.btn-ghost{background:transparent;color:#6b7280;padding:5px 10px}
+.btn-ghost{background:transparent;color:#6b7280;padding:8px 10px}
 .btn-ghost:hover{background:#f3f4f6;opacity:1}
-.btn-sm{padding:4px 10px;font-size:12px}
-.btn-xs{padding:2px 8px;font-size:11px}
+.btn-sm{padding:6px 12px;font-size:12px;min-height:36px}
+.btn-xs{padding:4px 8px;font-size:11px;min-height:auto}
 .card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 
 /* Badges */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1.4}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;line-height:1.4}
 .badge::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .s-pending{background:#f3f4f6;color:#4b5563}.s-pending::before{background:#9ca3af}
 .s-todo{background:#eff6ff;color:#1d4ed8}.s-todo::before{background:#3b82f6}
@@ -60,13 +60,51 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .badge-admin{background:#ede9fe;color:#6d28d9}.badge-admin::before{background:#7c3aed}
 .badge-member{background:#f0fdf4;color:#15803d}.badge-member::before{background:#22c55e}
 
-/* Layout */
-.sidebar{width:230px;background:var(--sidebar-bg);height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:20}
-.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
-.nav-item{padding:10px 16px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--sidebar-text);display:flex;align-items:center;gap:10px;margin:2px 8px;border-radius:8px;transition:all .15s}
+/* Layout - Desktop (default) */
+.sidebar{width:230px;background:var(--sidebar-bg);height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:1000;overflow-y:auto;transition:transform .3s ease}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-item{padding:10px 14px;cursor:pointer;font-size:13px;font-weight:500;color:var(--sidebar-text);display:flex;align-items:center;gap:12px;margin:2px 6px;border-radius:8px;transition:all .15s;min-height:40px}
 .nav-item:hover{background:rgba(255,255,255,.04);color:var(--sidebar-text)}
 .nav-item.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(79,70,229,.2)}
 .main{margin-left:230px;padding:28px;min-height:100vh}
+.hamburger{display:none;background:transparent;border:none;font-size:24px;cursor:pointer;color:var(--text);padding:8px;min-height:auto}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900}
+
+/* Mobile (< 640px) */
+@media(max-width:639px){
+  .sidebar{width:100%;max-width:280px;transform:translateX(-100%);height:100vh}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:block}
+  .sidebar-overlay.active{display:block}
+  .main{margin-left:0;padding:16px}
+  .hamburger{display:block}
+  input,select,textarea{font-size:16px;padding:12px;min-height:48px}
+  button{padding:12px 16px;font-size:14px;min-height:48px}
+  .btn-sm{padding:8px 12px;min-height:44px}
+  h2{font-size:20px!important}
+  h1{font-size:18px!important}
+  .card{padding:16px}
+  .modal{width:95vw!important;padding:20px!important}
+  .notif-panel{width:85vw!important}
+}
+
+/* Tablet (640px - 1023px) */
+@media(min-width:640px) and (max-width:1023px){
+  .sidebar{width:70px}
+  .sidebar-logo div:first-child{font-size:16px}
+  .sidebar-logo {padding:16px 8px}
+  .nav-item{padding:8px 6px;font-size:0;justify-content:center}
+  .nav-item span:first-child{font-size:20px}
+  .nav-item:hover::after,.nav-item.active::after{content:attr(data-label);position:absolute;left:70px;background:rgba(0,0,0,.8);color:#fff;padding:4px 8px;border-radius:4px;white-space:nowrap;font-size:12px;z-index:1001}
+  .main{margin-left:70px;padding:20px}
+  .hamburger{display:none}
+  input,select{font-size:14px}
+}
+
+/* Desktop (> 1024px) - default layout */
+@media(min-width:1024px){
+  .hamburger{display:none}
+}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px}
@@ -74,29 +112,76 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .modal-wide{width:680px}
 
 /* Task rows */
-.task-row{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-bottom:1px solid #f3f4f6;transition:background .1s}
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-bottom:1px solid #f3f4f6;transition:background .1s;flex-wrap:wrap}
 .task-row:hover{background:#fafafa}
 .task-row:last-child{border-bottom:none}
 .overdue-stripe{border-left:3px solid #ef4444}
 
 /* Kanban */
-.kanban-wrap{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.kanban-wrap{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding-bottom:12px;align-items:flex-start;-webkit-overflow-scrolling:touch}
 .kanban-col{background:#f8f9fa;border-radius:12px;padding:12px;min-width:190px;flex:0 0 190px}
 .kanban-col-header{font-size:12px;font-weight:700;padding:6px 8px 10px;display:flex;align-items:center;justify-content:space-between}
-.kanban-card{background:#fff;border-radius:9px;padding:11px 12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.09);cursor:pointer;border-left:3px solid transparent;transition:box-shadow .15s}
+.kanban-card{background:#fff;border-radius:9px;padding:11px 12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.09);cursor:pointer;border-left:3px solid transparent;transition:box-shadow .15s;min-height:auto}
 .kanban-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.13)}
 
 /* Forms */
 .form-group{margin-bottom:14px}
-label{font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px}
-.error-msg{color:#dc2626;font-size:13px;background:#fef2f2;padding:9px 13px;border-radius:7px;margin-top:6px}
-.success-msg{color:#15803d;font-size:13px;background:#f0fdf4;padding:9px 13px;border-radius:7px;margin-top:8px}
+label{font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:6px}
+.error-msg{color:#dc2626;font-size:13px;background:#fef2f2;padding:10px 12px;border-radius:7px;margin-top:8px}
+.success-msg{color:#15803d;font-size:13px;background:#f0fdf4;padding:10px 12px;border-radius:7px;margin-top:8px}
 
 /* Misc */
-.tab-btn{padding:7px 16px;border-radius:7px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.tab-btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;min-height:40px}
 .tab-active{background:#4f46e5;color:#fff}
 .tab-inactive{background:#e5e7eb;color:#374151}
-.stat-card{background:#fff;border-radius:12px;padding:18px 22px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:3px solid}
+.stat-card{background:#fff;border-radius:12px;padding:18px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:3px solid}
+
+/* Responsive Grids */
+@media(max-width:639px){
+  .kanban-col{min-width:160px;flex:0 0 160px;padding:10px}
+  .task-row{flex-direction:column;gap:8px;padding:12px 12px}
+  .task-row > *{flex-basis:100%}
+  .tab-btn{padding:6px 12px;font-size:12px;min-height:40px}
+  .stat-card{padding:14px 12px}
+  .stat-card div{font-size:14px}
+  .stat-card div:nth-child(2){font-size:24px!important}
+}
+
+@media(max-width:1023px){
+  .kanban-col{min-width:170px;flex:0 0 170px}
+}
+
+/* Responsive Grid Layouts */
+@media(max-width:639px){
+  /* 2-column grids become 1 column */
+  .form-group{display:block!important}
+  .form-group input,.form-group select,.form-group textarea{width:100%}
+  /* Project grid */
+  [style*="grid-template-columns: 'repeat(auto-fill"]{display:flex!important;flex-direction:column!important}
+  /* Filter bar */
+  [style*="display: 'flex'"]{flex-direction:row;flex-wrap:wrap}
+}
+
+@media(min-width:640px) and (max-width:1023px){
+  /* Projects grid 2 columns on tablet */
+}
+
+/* Responsive typography */
+@media(max-width:639px){
+  h1, h2, h3 {line-height:1.2}
+  .notif-item{padding:12px 14px}
+  .notif-panel{width:95vw!important}
+}
+
+/* Notification Panel Responsive */
+.notif-panel{position:fixed;top:0;right:0;width:380px;max-width:95vw;height:100vh;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:500;display:flex;flex-direction:column}
+@media(max-width:639px){
+  .notif-panel{width:100vw;max-width:100vw}
+}
+.notif-item{padding:14px 18px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .1s}
+.notif-item:hover{background:#fafafa}
+.notif-item.unread{background:#eff6ff;border-left:3px solid #4f46e5}
+.history-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
 .avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
 .progress-bg{background:#e5e7eb;border-radius:99px;height:7px;overflow:hidden}
 .progress-fill{height:100%;border-radius:99px;transition:width .4s}
@@ -825,16 +910,16 @@ function ProjectDetail({project,onBack,currentUser}){
       {/* List */}
       {tab==='list'&&<>
         <div style={{display:'flex',gap:10,marginBottom:14,flexWrap:'wrap'}}>
-          <input style={{maxWidth:190}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
-          <select style={{width:160}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+          <input style={{minWidth:140,flex:1}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          <select style={{minWidth:140}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
             <option value="">All Statuses</option>
             {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
           </select>
-          <select style={{width:145}} value={filterPri} onChange={e=>setFilterPri(e.target.value)}>
+          <select style={{minWidth:130}} value={filterPri} onChange={e=>setFilterPri(e.target.value)}>
             <option value="">All Priorities</option>
             {PRIORITIES.map(p=><option key={p.key} value={p.key}>{p.label}</option>)}
           </select>
-          <select style={{width:160}} value={filterAssignee} onChange={e=>setFilterAssignee(e.target.value)}>
+          <select style={{minWidth:140}} value={filterAssignee} onChange={e=>setFilterAssignee(e.target.value)}>
             <option value="">All Assignees</option>
             {members.map(m=><option key={m.user.id} value={String(m.user.id)}>{m.user.username}</option>)}
           </select>
@@ -843,7 +928,7 @@ function ProjectDetail({project,onBack,currentUser}){
           {!filtered.length&&<div style={{padding:36,textAlign:'center',color:'#6b7280'}}>No tasks match filters</div>}
           {filtered.map(t=>(
             <div key={t.id} className={'task-row'+(t.is_overdue?' overdue-stripe':'')}>
-              <div style={{flex:1,minWidth:0}}>
+              <div style={{flex:1,minWidth:0,width:'100%'}}>
                 <div style={{fontWeight:600,fontSize:14,marginBottom:3}}>{t.title}</div>
                 <div style={{display:'flex',gap:10,fontSize:12,color:'#9ca3af',flexWrap:'wrap',alignItems:'center'}}>
                   {t.assigned_to?<span>👤 @{t.assigned_to.username}</span>:<span style={{color:'#d97706'}}>👤 Unassigned</span>}
@@ -852,15 +937,17 @@ function ProjectDetail({project,onBack,currentUser}){
                   {t.comment_count>0&&<span>💬 {t.comment_count}</span>}
                 </div>
               </div>
-              <PriBadge p={t.priority}/>
-              <select style={{width:148,padding:'4px 8px',fontSize:12,borderRadius:6,border:'1px solid #ddd'}}
-                value={t.status} onChange={e=>quickStatus(t,e.target.value)}>
-                {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
-              </select>
-              <button className="btn-ghost btn-sm" onClick={()=>setEditTask(t)}>✏️</button>
-              {(isAdmin||(t.created_by&&t.created_by.id===currentUser?.id))&&(
-                <button className="btn-danger btn-sm" onClick={()=>delTask(t.id)}>🗑</button>
-              )}
+              <div style={{display:'flex',gap:6,alignItems:'center',width:'100%',marginTop:8,flexWrap:'wrap'}}>
+                <PriBadge p={t.priority}/>
+                <select style={{flex:1,minWidth:120,padding:'4px 8px',fontSize:12,borderRadius:6,border:'1px solid #ddd'}}
+                  value={t.status} onChange={e=>quickStatus(t,e.target.value)}>
+                  {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+                </select>
+                <button className="btn-ghost btn-sm" onClick={()=>setEditTask(t)}>✏️</button>
+                {(isAdmin||(t.created_by&&t.created_by.id===currentUser?.id))&&(
+                  <button className="btn-danger btn-sm" onClick={()=>delTask(t.id)}>🗑</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -928,25 +1015,25 @@ function Projects({onSelect}){
           <h2 style={{fontWeight:800,fontSize:24}}>Projects</h2>
           <div style={{color:'#6b7280',fontSize:14,marginTop:4}}>{projects.length} project{projects.length!==1?'s':''}</div>
         </div>
-        <div style={{display:'flex',gap:10}}>
-          <input style={{width:200}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        <div style={{display:'flex',gap:10,width:'100%',maxWidth:400,flexWrap:'wrap'}}>
+          <input style={{minWidth:150,flex:1}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
           <button className="btn-primary" onClick={()=>setShowNew(true)}>+ New Project</button>
         </div>
       </div>
       {!filtered.length&&<div className="card" style={{textAlign:'center',color:'#6b7280',padding:48}}>{projects.length===0?'No projects yet. Create your first one!':'No projects match.'}</div>}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(270px,1fr))',gap:16}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(max(260px,100%/2),1fr))',gap:16}}>
         {filtered.map(p=>(
           <div key={p.id} className="card" style={{cursor:'pointer',borderTop:'4px solid #4f46e5'}}
             onClick={()=>onSelect(p)}
             onMouseEnter={e=>e.currentTarget.style.boxShadow='0 4px 16px rgba(79,70,229,.15)'}
             onMouseLeave={e=>e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,.07)'}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
-              <div style={{fontWeight:700,fontSize:15,flex:1,marginRight:8}}>{p.name}</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6,gap:8}}>
+              <div style={{fontWeight:700,fontSize:15,flex:1,marginRight:8,wordBreak:'break-word'}}>{p.name}</div>
               {p.my_role==='admin'&&<button className="btn-danger btn-xs" onClick={e=>del(p.id,e)}>Delete</button>}
             </div>
             <div style={{color:'#6b7280',fontSize:13,minHeight:36,marginBottom:12,lineHeight:1.5}}>{p.description||'No description'}</div>
             <ProgressBar value={p.progress||0} color="#4f46e5"/>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:10,fontSize:12,color:'#6b7280'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:10,fontSize:12,color:'#6b7280',gap:4,flexWrap:'wrap'}}>
               <span>👥 {p.members?.length||0} · 📋 {p.task_count} tasks</span>
               <div style={{display:'flex',gap:6,alignItems:'center'}}>
                 <span style={{fontWeight:700,color:'#4f46e5'}}>{p.progress||0}%</span>
@@ -1022,7 +1109,7 @@ function MyTasks({currentUser}){
           <h2 style={{fontWeight:800,fontSize:24}}>My Tasks</h2>
           <div style={{color:'#6b7280',fontSize:14,marginTop:4}}>{tasks.length} tasks across {projects.length} project{projects.length!==1?'s':''}</div>
         </div>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'flex-end'}}>
           <button className={'tab-btn '+(view==='list'?'tab-active':'tab-inactive')} onClick={()=>setView('list')}>📋 List</button>
           <button className={'tab-btn '+(view==='board'?'tab-active':'tab-inactive')} onClick={()=>setView('board')}>🗂 Board</button>
           <button className="btn-primary" onClick={()=>setShowNew(true)} disabled={!projects.length}>+ Add Task</button>
@@ -1044,16 +1131,16 @@ function MyTasks({currentUser}){
 
       {/* Filters */}
       <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap'}}>
-        <input style={{maxWidth:180}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
-        <select style={{width:155}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+        <input style={{minWidth:140,flex:1}} placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        <select style={{minWidth:130}} value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
           <option value="">All Statuses</option>
           {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
         </select>
-        <select style={{width:140}} value={filterPri} onChange={e=>setFilterPri(e.target.value)}>
+        <select style={{minWidth:120}} value={filterPri} onChange={e=>setFilterPri(e.target.value)}>
           <option value="">All Priorities</option>
           {PRIORITIES.map(p=><option key={p.key} value={p.key}>{p.label}</option>)}
         </select>
-        <select style={{width:175}} value={filterProject} onChange={e=>setFilterProject(e.target.value)}>
+        <select style={{minWidth:140}} value={filterProject} onChange={e=>setFilterProject(e.target.value)}>
           <option value="">All Projects</option>
           {projects.map(p=><option key={p.id} value={String(p.id)}>{p.name}</option>)}
         </select>
@@ -1066,7 +1153,7 @@ function MyTasks({currentUser}){
           {!filtered.length&&<div style={{padding:48,textAlign:'center',color:'#6b7280'}}>{tasks.length===0?<>No tasks. Click <strong>+ Add Task</strong>.</>:'No tasks match filters.'}</div>}
           {filtered.map(t=>(
             <div key={t.id} className={'task-row'+(t.is_overdue?' overdue-stripe':'')}>
-              <div style={{flex:1,minWidth:0}}>
+              <div style={{flex:1,minWidth:0,width:'100%'}}>
                 <div style={{fontWeight:600,fontSize:14,marginBottom:3}}>{t.title}</div>
                 <div style={{display:'flex',gap:10,fontSize:12,color:'#9ca3af',flexWrap:'wrap',alignItems:'center'}}>
                   <span>📁 {projectMap[t.project]||'Project #'+t.project}</span>
@@ -1076,13 +1163,15 @@ function MyTasks({currentUser}){
                   {t.comment_count>0&&<span>💬 {t.comment_count}</span>}
                 </div>
               </div>
-              <PriBadge p={t.priority}/>
-              <select style={{width:150,padding:'4px 8px',fontSize:12,borderRadius:6,border:'1px solid #ddd'}}
-                value={t.status} onChange={e=>updateStatus(t,e.target.value)}>
-                {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
-              </select>
-              <button className="btn-ghost btn-sm" onClick={()=>setEditTask(t)}>✏️ Edit</button>
-              <button className="btn-danger btn-sm" onClick={()=>delTask(t.id)}>🗑</button>
+              <div style={{display:'flex',gap:6,alignItems:'center',width:'100%',marginTop:8,flexWrap:'wrap'}}>
+                <PriBadge p={t.priority}/>
+                <select style={{flex:1,minWidth:120,padding:'4px 8px',fontSize:12,borderRadius:6,border:'1px solid #ddd'}}
+                  value={t.status} onChange={e=>updateStatus(t,e.target.value)}>
+                  {STATUSES.map(s=><option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+                </select>
+                <button className="btn-ghost btn-sm" onClick={()=>setEditTask(t)}>✏️ Edit</button>
+                <button className="btn-danger btn-sm" onClick={()=>delTask(t.id)}>🗑</button>
+              </div>
             </div>
           ))}
         </div>
@@ -1129,24 +1218,24 @@ function Dashboard({onNavigate}){
         <div style={{color:'#6b7280',fontSize:14,marginTop:4}}>Here's what's happening across your projects</div>
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:14,marginBottom:22}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:22}}>
         {statCards.map(c=>(
           <div key={c.label} className="stat-card" style={{borderTopColor:c.color}}>
-            <div style={{fontSize:26,marginBottom:4}}>{c.icon}</div>
-            <div style={{fontSize:30,fontWeight:800,color:c.color,lineHeight:1}}>{c.val}</div>
-            <div style={{fontSize:13,color:'#6b7280',marginTop:4}}>{c.label}</div>
+            <div style={{fontSize:24,marginBottom:4}}>{c.icon}</div>
+            <div style={{fontSize:26,fontWeight:800,color:c.color,lineHeight:1}}>{c.val}</div>
+            <div style={{fontSize:12,color:'#6b7280',marginTop:4}}>{c.label}</div>
           </div>
         ))}
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:16}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:16,marginBottom:16}}>
         <div className="card">
           <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>My Task Breakdown</div>
           {!statusBreakdown.length&&<div style={{color:'#6b7280',fontSize:13}}>No tasks assigned yet</div>}
           {statusBreakdown.map(s=>(
-            <div key={s.key} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-              <span className={'badge '+s.cls} style={{minWidth:105,fontSize:11}}>{s.icon} {s.label}</span>
-              <div style={{flex:1}}><ProgressBar value={stats.my_tasks?Math.round((s.count/stats.my_tasks)*100):0} color={s.col}/></div>
+            <div key={s.key} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,flexWrap:'wrap'}}>
+              <span className={'badge '+s.cls} style={{minWidth:90,fontSize:11}}>{s.icon} {s.label}</span>
+              <div style={{flex:1,minWidth:80}}><ProgressBar value={stats.my_tasks?Math.round((s.count/stats.my_tasks)*100):0} color={s.col}/></div>
               <span style={{fontWeight:700,fontSize:13,minWidth:20,textAlign:'right'}}>{s.count}</span>
             </div>
           ))}
@@ -1155,7 +1244,7 @@ function Dashboard({onNavigate}){
           <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>⚠️ Needs Attention</div>
           {!attention.length&&<div style={{color:'#6b7280',fontSize:13}}>No overdue or blocked tasks 🎉</div>}
           {attention.map(t=>(
-            <div key={t.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:'1px solid #f3f4f6'}}>
+            <div key={t.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:'1px solid #f3f4f6',minWidth:0}}>
               <StatusBadge s={t.status}/>
               <div style={{flex:1,fontSize:13,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.title}</div>
               {t.due_date&&<span style={{fontSize:11,color:'#dc2626',whiteSpace:'nowrap'}}>📅 {t.due_date}</span>}
@@ -1166,11 +1255,11 @@ function Dashboard({onNavigate}){
 
       {projects.length>0&&<>
         <div style={{fontWeight:700,fontSize:15,marginBottom:12}}>Recent Projects</div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:12}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(max(200px,100%/2),1fr))',gap:12}}>
           {projects.map(p=>(
             <div key={p.id} className="card" style={{cursor:'pointer',borderLeft:'4px solid #4f46e5',padding:'14px 16px'}}
               onClick={()=>onNavigate('projects',p)}>
-              <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>{p.name}</div>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:4,wordBreak:'break-word'}}>{p.name}</div>
               <div style={{fontSize:12,color:'#6b7280',marginBottom:10}}>{p.task_count} tasks · {p.members?.length||0} members</div>
               <ProgressBar value={p.progress||0} color="#4f46e5"/>
               <div style={{fontSize:11,color:'#6b7280',marginTop:4,textAlign:'right'}}>{p.progress||0}% complete</div>
@@ -1193,6 +1282,7 @@ function App(){
   const [selectedProject,setSelectedProject]=React.useState(null);
   const [unreadCount,setUnreadCount]=React.useState(0);
   const [showNotifs,setShowNotifs]=React.useState(false);
+  const [sidebarOpen,setSidebarOpen]=React.useState(false);
   const pollRef=React.useRef(null);
 
   // Theme (light / dark)
@@ -1224,7 +1314,11 @@ function App(){
     setAuthed(false);setUser(null);setPage('dashboard');setSelectedProject(null);setUnreadCount(0);
   };
 
-  const navigate=(p,proj)=>{setPage(p);setSelectedProject(proj||null);};
+  const navigate=(p,proj)=>{
+    setPage(p);
+    setSelectedProject(proj||null);
+    setSidebarOpen(false);
+  };
 
   if(!authed) return <AuthPage onLogin={()=>setAuthed(true)}/>;
 
@@ -1235,9 +1329,14 @@ function App(){
   ];
 
   return(
-    <div style={{display:'flex'}}>
+    <div style={{display:'flex',position:'relative'}}>
+      {/* Mobile Overlay */}
+      {sidebarOpen&&(
+        <div className="sidebar-overlay active" onClick={()=>setSidebarOpen(false)}/>
+      )}
+
       {/* Sidebar */}
-      <div className="sidebar">
+      <div className={'sidebar'+(sidebarOpen?' open':'')}>
         <div className="sidebar-logo">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div>
@@ -1249,25 +1348,26 @@ function App(){
             </button>
           </div>
         </div>
-        <div style={{padding:'12px 8px',flex:1}}>
+        <div style={{padding:'12px 8px',flex:1,overflowY:'auto'}}>
           {nav.map(n=>(
             <div key={n.id} className={'nav-item'+(page===n.id&&!selectedProject?' active':'')}
-              onClick={()=>navigate(n.id)}>
-              <span style={{fontSize:16}}>{n.icon}</span>{n.label}
+              onClick={()=>navigate(n.id)}
+              data-label={n.label}>
+              <span style={{fontSize:16}}>{n.icon}</span><span style={{fontSize:13}}>{n.label}</span>
             </div>
           ))}
         </div>
-        <div style={{padding:'14px 16px',borderTop:'1px solid rgba(255,255,255,.1)'}}>
+        <div style={{padding:'14px 16px',borderTop:'1px solid rgba(255,255,255,.1)',flexShrink:0}}>
           {/* Notification Bell */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,gap:8,flexWrap:'wrap'}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
               {user&&<Avatar name={user.username} size={32} color="#fff" bg="#4f46e5"/>}
-              <div>
-                <div style={{color:'#fff',fontSize:13,fontWeight:600}}>{user?.first_name||user?.username}</div>
-                <div style={{color:'rgba(255,255,255,.4)',fontSize:11}}>@{user?.username}</div>
+              <div style={{minWidth:0}}>
+                <div style={{color:'#fff',fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user?.first_name||user?.username}</div>
+                <div style={{color:'rgba(255,255,255,.4)',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{user?.username}</div>
               </div>
             </div>
-            <button className="notif-bell" onClick={()=>setShowNotifs(s=>!s)} title="Notifications">
+            <button className="notif-bell" onClick={()=>setShowNotifs(s=>!s)} title="Notifications" style={{flexShrink:0}}>
               🔔
               {unreadCount>0&&<span className="notif-badge">{unreadCount>99?'99+':unreadCount}</span>}
             </button>
@@ -1285,7 +1385,19 @@ function App(){
       )}
 
       {/* Main content */}
-      <div className="main" style={{flex:1}}>
+      <div className="main" style={{flex:1,display:'flex',flexDirection:'column'}}>
+        {/* Mobile Header Bar */}
+        <div style={{display:'none',alignItems:'center',justifyContent:'space-between',marginBottom:16,paddingBottom:12,borderBottom:'1px solid #f3f4f6'}}
+          className="mobile-header">
+          <button className="hamburger" onClick={()=>setSidebarOpen(s=>!s)}>☰</button>
+          <div style={{fontWeight:700,fontSize:16}}>TaskFlow</div>
+          <button className="notif-bell" onClick={()=>setShowNotifs(s=>!s)} style={{fontSize:20}}>
+            🔔
+            {unreadCount>0&&<span className="notif-badge">{unreadCount>99?'99+':unreadCount}</span>}
+          </button>
+        </div>
+        <style>{`@media(max-width:639px){.mobile-header{display:flex!important;}}`}</style>
+
         {page==='dashboard'&&<Dashboard onNavigate={navigate}/>}
         {page==='projects'&&!selectedProject&&<Projects onSelect={p=>navigate('projects',p)}/>}
         {page==='projects'&&selectedProject&&(

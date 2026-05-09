@@ -8,15 +8,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-prod')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# Allow hosts: read from env or allow all in production
-_allowed_hosts_str = os.environ.get('ALLOWED_HOSTS', '')
-if _allowed_hosts_str:
-    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_str.split(',') if h.strip()]
-elif not DEBUG:
-    # In production without explicit ALLOWED_HOSTS, allow common deployment domains
-    ALLOWED_HOSTS = ['*']
+# In production, allow all hosts (we're behind Railway proxy)
+# In development, restrict to localhost
+if DEBUG:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '127.0.0.1:8000']
 else:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    # Production: allow any host (Railway handles proxy)
+    ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
