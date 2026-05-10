@@ -76,6 +76,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'api', 'templates'),
+]
+
+# Cache control for static files in production
+WHITENOISE_MIMETYPES = {
+    '.html': 'text/html; charset=utf-8',
+}
 
 LOGGING = {
     'version': 1,

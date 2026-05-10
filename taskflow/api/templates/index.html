@@ -206,14 +206,33 @@ const API='/api';
 const getToken=()=>localStorage.getItem('tf_token');
 
 async function api(path,opts={}){
-  const res=await fetch(API+path,{
-    headers:{'Content-Type':'application/json',...(getToken()?{'Authorization':'Bearer '+getToken()}:{})},
-    ...opts
-  });
-  if(res.status===204) return {};
-  const data=await res.json();
-  if(!res.ok) throw data;
-  return data;
+  const headers={'Content-Type':'application/json'};
+  const token=getToken();
+  if(token){headers['Authorization']='Bearer '+token;}
+  
+  try{
+    const res=await fetch(API+path,{
+      headers,
+      ...opts,
+      timeout: 30000,
+    });
+    
+    if(res.status===204) return {};
+    const data=await res.json();
+    
+    if(!res.ok){
+      // Log auth errors for debugging
+      if(res.status===401){
+        console.error('401 Auth failed for '+path, {token: !!token, headers});
+        if(!token) throw {detail:'Please login first'};
+      }
+      throw data;
+    }
+    return data;
+  }catch(e){
+    console.error('API Error for '+path+':', e);
+    throw e;
+  }
 }
 
 /* ── Config ─────────────────────────────────────────────────────────────────── */
@@ -704,7 +723,10 @@ function InvitePanel({projectId,onDone}){
       const res=await api('/projects/'+projectId+'/invite/',{method:'POST',body:JSON.stringify({email:target,role})});
       setMsg(res.status==='added'?'✅ '+res.user.username+' added instantly — already on TaskFlow':'📧 Invite sent to '+target);
       setEmail('');setResults([]);onDone();
-    }catch(e){setErr(e.error||e.detail||Object.values(e)[0]||'Error');}
+    }catch(e){
+      const errMsg=e.error||e.detail||e.email?.[0]||Object.values(e)[0]||'Failed to send invite';
+      setErr(typeof errMsg==='string'?errMsg:JSON.stringify(errMsg));
+    }
     setLoading(false);
   };
 

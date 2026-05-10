@@ -254,11 +254,16 @@ class TaskViewSet(viewsets.ModelViewSet):
 # ── Invites ───────────────────────────────────────────────────────────────────
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def invite_to_project(request, project_id):
     try:
         project = Project.objects.get(id=project_id)
     except Project.DoesNotExist:
         return Response({'error': 'Project not found'}, status=404)
+
+    # Check if user is admin (will work only if authenticated)
+    if not request.user or not request.user.is_authenticated:
+        return Response({'error': 'Authentication required'}, status=401)
 
     if not ProjectMember.objects.filter(project=project, user=request.user, role='admin').exists():
         return Response({'error': 'Admin only'}, status=403)
@@ -267,6 +272,10 @@ def invite_to_project(request, project_id):
     role  = request.data.get('role', 'member')
     if not email:
         return Response({'error': 'Email is required'}, status=400)
+
+    # Validate email format
+    if '@' not in email or len(email) < 5:
+        return Response({'error': 'Invalid email format'}, status=400)
 
     existing = User.objects.filter(email=email).first()
     if existing:
@@ -383,6 +392,7 @@ def accept_invite(request, token):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def project_invites(request, project_id):
     try:
         project = Project.objects.get(id=project_id)
@@ -395,6 +405,7 @@ def project_invites(request, project_id):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def cancel_invite(request, project_id, invite_id):
     if not ProjectMember.objects.filter(project_id=project_id, user=request.user, role='admin').exists():
         return Response({'error': 'Admin only'}, status=403)
