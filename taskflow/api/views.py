@@ -4,7 +4,8 @@ from django.db.models import Q
 from django.utils import connection, timezone
 from django.core.mail import send_mail
 from django.conf import settings
-
+from rest_framework import status
+from .tasks import send_notification_task
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
