@@ -4,7 +4,6 @@ from .models import Task, TaskStatusHistory, Notification
 
 
 def _create_notification(recipient, actor, notif_type, title, message, task=None, project=None):
-    """Helper — skip self-notifications."""
     if recipient == actor:
         return
     Notification.objects.create(
@@ -20,7 +19,6 @@ def _create_notification(recipient, actor, notif_type, title, message, task=None
 
 @receiver(pre_save, sender=Task)
 def capture_old_status(sender, instance, **kwargs):
-    """Store the previous status on the instance before saving."""
     if instance.pk:
         try:
             instance._old_status = Task.objects.get(pk=instance.pk).status
@@ -36,10 +34,9 @@ def capture_old_status(sender, instance, **kwargs):
 @receiver(post_save, sender=Task)
 def handle_task_changes(sender, instance, created, **kwargs):
     task = instance
-    actor = getattr(task, '_current_user', None)  # set in view
+    actor = getattr(task, '_current_user', None)
 
     if created:
-        # Notify assignee when a new task is assigned
         if task.assigned_to and task.assigned_to != task.created_by:
             _create_notification(
                 recipient=task.assigned_to,
@@ -55,7 +52,6 @@ def handle_task_changes(sender, instance, created, **kwargs):
     old_status = getattr(task, '_old_status', None)
     old_assigned = getattr(task, '_old_assigned', None)
 
-    # ── Status changed ────────────────────────────────────────────────────────
     if old_status and old_status != task.status:
         # Log history
         TaskStatusHistory.objects.create(
@@ -76,7 +72,6 @@ def handle_task_changes(sender, instance, created, **kwargs):
 
         notif_msg = f'{changer} changed "{task.title}" from {old_label} → {new_label} in {task.project.name}.'
 
-        # Notify task creator (if they didn't make the change)
         if task.created_by:
             _create_notification(
                 recipient=task.created_by,
@@ -88,7 +83,6 @@ def handle_task_changes(sender, instance, created, **kwargs):
                 project=task.project,
             )
 
-        # Notify assignee (if different from creator and didn't make the change)
         if task.assigned_to and task.assigned_to != task.created_by:
             _create_notification(
                 recipient=task.assigned_to,
@@ -100,7 +94,6 @@ def handle_task_changes(sender, instance, created, **kwargs):
                 project=task.project,
             )
 
-    # ── Assignment changed ────────────────────────────────────────────────────
     if old_assigned != task.assigned_to:
         if task.assigned_to:
             _create_notification(
@@ -112,7 +105,6 @@ def handle_task_changes(sender, instance, created, **kwargs):
                 task=task,
                 project=task.project,
             )
-        # Notify old assignee they were unassigned
         if old_assigned:
             _create_notification(
                 recipient=old_assigned,

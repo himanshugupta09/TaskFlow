@@ -9,3 +9,7 @@ dj-database-url
 gunicorn
 whitenoise
 python-dotenv
+celery
+redis
+django-redis
+celery[redis]

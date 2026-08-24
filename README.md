@@ -434,6 +434,24 @@ python manage.py createsuperuser
 - Check JWT token hasn't expired
 - Review Django logs for errors
 
+## Tradeoffs & What I'd Do With More Time
+
+This assignment intentionally forced prioritization. Here are the architectural tradeoffs I made to deliver a robust backend within the time constraint:
+
+1. **Framework Choice (Django over FastAPI):**
+   I utilized Django REST Framework because its built-in ORM and migration system allowed me to rapidly model complex authorization boundaries (e.g., ensuring users cannot access tasks in unassigned projects). While FastAPI offers superior async performance, DRF allowed me to focus heavily on the background processing and caching requirements rather than writing boilerplate CRUD SQL queries.
+
+2. **Cache Invalidation Strategy:**
+   I implemented a strict "Delete on Write" pattern using `django-redis` wildcard pattern matching (`cache.delete_pattern()`). When a task updates, I wipe all cached task querysets for the users in that specific project. 
+   *Tradeoff:* While this guarantees no stale reads (a primary requirement), it is aggressive. With more time, I would implement a finer-grained cache update strategy or use Redis Sets to track specific query keys to avoid deleting unrelated cached queries for a user.
+
+3. **Background Notifications (Celery vs. RQ):**
+   I chose Celery backed by Redis. While RQ is simpler to set up, Celery is the enterprise standard for Django and provides better retry mechanisms and rate-limiting configurations. 
+   *Tradeoff:* Since actual email/SMS delivery wasn't required, the Celery task currently relies on standard Python `logging`. In production, I would wire this to Amazon SES or Twilio and implement exponential backoff for delivery failures.
+
+4. **Metrics Endpoint:**
+   The current `/metrics` endpoint is a simple JSON view returning database counts. With more time, I would replace this with `django-prometheus` to expose native PromQL metrics (like request latency histograms and error rates) for scraping by a Grafana dashboard.
+
 ## 📚 Additional Resources
 
 - [Django Documentation](https://docs.djangoproject.com/)
@@ -459,5 +477,5 @@ For issues, questions, or suggestions, please create an issue in the repository.
 
 ---
 
-**Last Updated**: May 2026  
+**Last Updated**: August 2026  
 **Version**: 1.0.0

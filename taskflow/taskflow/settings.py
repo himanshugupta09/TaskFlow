@@ -8,12 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-prod')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# In production, allow all hosts (we're behind Railway proxy)
-# In development, restrict to localhost
 if DEBUG:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '127.0.0.1:8000']
 else:
-    # Production: allow any host (Railway handles proxy)
     ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -72,7 +69,19 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -80,7 +89,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'api', 'templates'),
 ]
 
-# Cache control for static files in production
 WHITENOISE_MIMETYPES = {
     '.html': 'text/html; charset=utf-8',
 }
@@ -113,7 +121,6 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Email configuration (use env vars, not hardcoded)
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:

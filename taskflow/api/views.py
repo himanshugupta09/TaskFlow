@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django.utils import timezone
+from django.utils import connection, timezone
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from django.core.cache import cache
 from .models import (
     Project, ProjectMember, Task, TaskComment,
     TaskStatusHistory, Notification, ProjectInvite,
@@ -26,8 +26,6 @@ from .serializers import (
 def index(request):
     return render(request, 'index.html')
 
-
-# ── Auth ──────────────────────────────────────────────────────────────────────
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -48,8 +46,6 @@ def register(request):
 def me(request):
     return Response(UserSerializer(request.user).data)
 
-
-# ── Dashboard ─────────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
 def dashboard(request):
@@ -79,7 +75,6 @@ def dashboard(request):
     })
 
 
-# ── User search ───────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
 def search_users(request):
@@ -92,7 +87,6 @@ def search_users(request):
     return Response(UserSerializer(users, many=True).data)
 
 
-# ── Notifications ─────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
 def notifications_list(request):
@@ -108,8 +102,7 @@ def notifications_unread_count(request):
 
 @api_view(['POST'])
 def notifications_mark_read(request):
-    """Mark all or specific notifications as read."""
-    ids = request.data.get('ids')   # list of ids, or omit to mark all
+    ids = request.data.get('ids') 
     qs  = Notification.objects.filter(recipient=request.user, is_read=False)
     if ids:
         qs = qs.filter(id__in=ids)
@@ -122,8 +115,6 @@ def notification_delete(request, pk):
     Notification.objects.filter(id=pk, recipient=request.user).delete()
     return Response(status=204)
 
-
-# ── Projects ──────────────────────────────────────────────────────────────────
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class   = ProjectSerializer
@@ -176,82 +167,150 @@ class ProjectViewSet(viewsets.ModelViewSet):
             assigned_id = s.validated_data.pop('assigned_to_id', None)
             assigned    = User.objects.filter(id=assigned_id).first() if assigned_id else None
             task        = s.save(project=project, created_by=request.user, assigned_to=assigned)
-            # Attach current user for signal
             task._current_user = request.user
             task.save()
             return Response(TaskSerializer(task).data, status=201)
         return Response(s.errors, status=400)
 
 
-# ── Tasks ─────────────────────────────────────────────────────────────────────
+
 
 class TaskViewSet(viewsets.ModelViewSet):
-    serializer_class   = TaskSerializer
+    serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        ids = ProjectMember.objects.filter(
+        project_ids = ProjectMember.objects.filter(
             user=self.request.user
         ).values_list('project_id', flat=True)
-        return Task.objects.filter(project_id__in=ids)
+        
+        queryset = Task.objects.filter(project_id__in=project_ids)
+
+        status_param = self.request.query_params.get('status')
+        assignee_param = self.request.query_params.get('assignee')
+        due_date_after = self.request.query_params.get('due_date_after')
+        due_date_before = self.request.query_params.get('due_date_before')
+
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        if assignee_param:
+            queryset = queryset.filter(assigned_to_id=assignee_param)
+        if due_date_after:
+            queryset = queryset.filter(due_date__gte=due_date_after)
+        if due_date_before:
+            queryset = queryset.filter(due_date__lte=due_date_before)
+
+        return queryset.order_by('-created_at')
+
+    def list(self, request, *args, **kwargs):
+        query_string = request.GET.urlencode()
+        cache_key = f"tasks_user_{request.user.id}_{query_string}"
+
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, timeout=60 * 10)
+        return response
+    def perform_create(self, serializer):
+        task = serializer.save(created_by=self.request.user)
+        self._invalidate_project_task_caches(task.project_id)
 
     def update(self, request, *args, **kwargs):
-        task    = self.get_object()
+        task = self.get_object()
+        old_status = task.status
+        old_assignee = task.assigned_to
+
         partial = kwargs.pop('partial', False)
-        s       = TaskSerializer(task, data=request.data, partial=partial)
+        s = TaskSerializer(task, data=request.data, partial=partial)
+        
         if s.is_valid():
             assigned_id = s.validated_data.pop('assigned_to_id', -1)
             if assigned_id != -1:
                 s.validated_data['assigned_to'] = (
                     User.objects.filter(id=assigned_id).first() if assigned_id else None
                 )
-            # Attach current user so signal can identify who made the change
+
             instance = s.save()
             instance._current_user = request.user
-            instance.save()   # triggers post_save signal again with _current_user set
+            instance.save()
+
+            self._invalidate_project_task_caches(instance.project_id)
+
+            if instance.status != old_status:
+                recipients = {instance.created_by, instance.assigned_to} - {None, request.user}
+                for recipient in recipients:
+                    send_notification_task.delay(
+                        recipient_id=recipient.id,
+                        title=f'Task Status Updated: "{instance.title}"',
+                        message=f'Status changed from "{old_status}" to "{instance.status}".',
+                        task_id=instance.id,
+                    )
+
+            if instance.assigned_to and instance.assigned_to != old_assignee:
+                send_notification_task.delay(
+                    recipient_id=instance.assigned_to.id,
+                    title='New Task Assigned',
+                    message=f'You were assigned to task: "{instance.title}".',
+                    task_id=instance.id,
+                )
+
             return Response(TaskSerializer(instance).data)
-        return Response(s.errors, status=400)
+
+        return Response(s.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
-        task     = self.get_object()
+        task = self.get_object()
         is_admin = ProjectMember.objects.filter(
             project=task.project, user=request.user, role='admin'
         ).exists()
+
         if task.created_by != request.user and not is_admin:
-            return Response({'error': 'Not authorized'}, status=403)
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        project_id = task.project_id
         task.delete()
-        return Response(status=204)
+
+        self._invalidate_project_task_caches(project_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['get', 'post'], url_path='comments')
     def comments(self, request, pk=None):
         task = self.get_object()
         if request.method == 'GET':
             return Response(TaskCommentSerializer(task.comments.all(), many=True).data)
+
         s = TaskCommentSerializer(data=request.data)
         if s.is_valid():
             comment = s.save(task=task, author=request.user)
-            # Notify task creator + assignee about new comment
-            for recipient in {task.created_by, task.assigned_to} - {None, request.user}:
-                Notification.objects.create(
-                    recipient  = recipient,
-                    actor      = request.user,
-                    notif_type = 'task_commented',
-                    title      = f'New comment on "{task.title}"',
-                    message    = f'{request.user.username} commented: "{comment.text[:80]}"',
-                    task       = task,
-                    project    = task.project,
+
+            recipients = {task.created_by, task.assigned_to} - {None, request.user}
+            for recipient in recipients:
+                send_notification_task.delay(
+                    recipient_id=recipient.id,
+                    title=f'New comment on "{task.title}"',
+                    message=f'{request.user.username} commented: "{comment.text[:80]}"',
+                    task_id=task.id,
                 )
-            return Response(s.data, status=201)
-        return Response(s.errors, status=400)
+
+            return Response(s.data, status=status.HTTP_201_CREATED)
+
+        return Response(s.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'], url_path='history')
     def history(self, request, pk=None):
         task = self.get_object()
-        h    = TaskStatusHistory.objects.filter(task=task)
+        h = TaskStatusHistory.objects.filter(task=task)
         return Response(TaskStatusHistorySerializer(h, many=True).data)
 
+    def _invalidate_project_task_caches(self, project_id):
+        member_user_ids = ProjectMember.objects.filter(
+            project_id=project_id
+        ).values_list('user_id', flat=True)
 
-# ── Invites ───────────────────────────────────────────────────────────────────
+        for user_id in member_user_ids:
+            cache.delete_pattern(f"tasks_user_{user_id}_*")
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -261,7 +320,6 @@ def invite_to_project(request, project_id):
     except Project.DoesNotExist:
         return Response({'error': 'Project not found'}, status=404)
 
-    # Check if user is admin (will work only if authenticated)
     if not request.user or not request.user.is_authenticated:
         return Response({'error': 'Authentication required'}, status=401)
 
@@ -273,7 +331,6 @@ def invite_to_project(request, project_id):
     if not email:
         return Response({'error': 'Email is required'}, status=400)
 
-    # Validate email format
     if '@' not in email or len(email) < 5:
         return Response({'error': 'Invalid email format'}, status=400)
 
@@ -282,7 +339,6 @@ def invite_to_project(request, project_id):
         if ProjectMember.objects.filter(project=project, user=existing).exists():
             return Response({'error': 'User is already a member'}, status=400)
         ProjectMember.objects.create(project=project, user=existing, role=role)
-        # In-app notification
         Notification.objects.create(
             recipient  = existing,
             actor      = request.user,
@@ -411,3 +467,45 @@ def cancel_invite(request, project_id, invite_id):
         return Response({'error': 'Admin only'}, status=403)
     ProjectInvite.objects.filter(id=invite_id, project_id=project_id).delete()
     return Response(status=204)
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+
+    health_status = {
+        "status": "healthy",
+        "database": "unknown",
+        "redis": "unknown"
+    }
+    
+    try:
+        connection.ensure_connection()
+        health_status["database"] = "connected"
+    except Exception:
+        health_status["database"] = "disconnected"
+        health_status["status"] = "unhealthy"
+    try:
+        cache.set('health_check', 'ok', timeout=5)
+        if cache.get('health_check') == 'ok':
+            health_status["redis"] = "connected"
+    except Exception:
+        health_status["redis"] = "disconnected"
+        health_status["status"] = "unhealthy"
+
+    status_code = 200 if health_status["status"] == "healthy" else 503
+    return Response(health_status, status=status_code)
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def metrics(request):
+
+    return Response({
+        "total_projects": Project.objects.count(),
+        "total_tasks": Task.objects.count(),
+        "total_notifications_sent": Notification.objects.count()
+    })
+
