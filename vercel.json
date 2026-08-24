@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "taskflow/wsgi.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "taskflow/wsgi.py"
+    }
+  ]
+}
