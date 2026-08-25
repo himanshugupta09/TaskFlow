@@ -54,7 +54,10 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = 'taskflow.wsgi.application'
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+# ---------------------------------------------------------
+# DATABASE CONFIGURATION
+# ---------------------------------------------------------
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
     DATABASES = {
@@ -65,10 +68,40 @@ if DATABASE_URL:
         )
     }
 else:
+    # If on Vercel / Production and DATABASE_URL is missing, fail loudly with context
+    if not DEBUG and os.environ.get('VERCEL'):
+        raise RuntimeError(
+            f"DATABASE_URL is not set in Vercel environment variables. "
+            f"Available keys: {list(os.environ.keys())}"
+        )
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# ---------------------------------------------------------
+# CACHE CONFIGURATION
+# ---------------------------------------------------------
+REDIS_URL = os.environ.get("REDIS_URL")
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
+else:
+    # Fallback to local memory cache for serverless / local dev without Redis
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "taskflow-local-cache",
         }
     }
 
@@ -82,15 +115,7 @@ CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://127.0.0.1:6379/
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
