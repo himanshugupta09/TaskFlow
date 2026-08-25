@@ -216,7 +216,14 @@ class TaskViewSet(viewsets.ModelViewSet):
         cache.set(cache_key, response.data, timeout=60 * 10)
         return response
     def perform_create(self, serializer):
-        task = serializer.save(created_by=self.request.user)
+        assigned_to_id = self.request.data.get('assigned_to')
+        
+        if assigned_to_id:
+            assigned_user = User.objects.get(id=assigned_to_id)
+            task = serializer.save(created_by=self.request.user, assigned_to=assigned_user)
+        else:
+            task = serializer.save(created_by=self.request.user, assigned_to=self.request.user)
+            
         self._invalidate_project_task_caches(task.project_id)
 
     def update(self, request, *args, **kwargs):
@@ -438,7 +445,7 @@ def accept_invite(request, token):
         message    = f'You have joined "{invite.project.name}" as {invite.role}.',
         project    = invite.project,
     )
-
+    cache.delete(f"project_{invite.project.id}_invites")
     refresh = RefreshToken.for_user(user)
     return Response({
         'message':    f'You joined {invite.project.name}!',
