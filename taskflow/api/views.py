@@ -445,7 +445,8 @@ def accept_invite(request, token):
         message    = f'You have joined "{invite.project.name}" as {invite.role}.',
         project    = invite.project,
     )
-    cache.delete(f"project_{invite.project.id}_invites")
+    cache.delete_pattern(f"*project*")
+    cache.delete_pattern(f"*invite*")
     refresh = RefreshToken.for_user(user)
     return Response({
         'message':    f'You joined {invite.project.name}!',
