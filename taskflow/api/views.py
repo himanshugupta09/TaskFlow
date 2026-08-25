@@ -23,7 +23,7 @@ from .serializers import (
     TaskSerializer, TaskCommentSerializer, TaskStatusHistorySerializer,
     NotificationSerializer, ProjectInviteSerializer,
 )
-
+import os
 
 def index(request):
     return render(request, 'index.html')
