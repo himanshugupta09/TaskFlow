@@ -54,7 +54,7 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = 'taskflow.wsgi.application'
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
     DATABASES = {
