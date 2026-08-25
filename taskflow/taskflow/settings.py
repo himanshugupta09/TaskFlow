@@ -59,28 +59,18 @@ WSGI_APPLICATION = 'taskflow.wsgi.application'
 # ---------------------------------------------------------
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
-else:
-    # If on Vercel / Production and DATABASE_URL is missing, fail loudly with context
-    if not DEBUG and os.environ.get('VERCEL'):
-        raise RuntimeError(
-            f"DATABASE_URL is not set in Vercel environment variables. "
-            f"Available keys: {list(os.environ.keys())}"
-        )
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+if not DATABASE_URL:
+    raise ValueError(
+        "CRITICAL ERROR: DATABASE_URL is missing! Vercel is not passing the environment variable."
+    )
 
+DATABASES = {
+    'default': dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
 # ---------------------------------------------------------
 # CACHE CONFIGURATION
 # ---------------------------------------------------------
