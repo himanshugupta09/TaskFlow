@@ -32,4 +32,5 @@ urlpatterns = [
     path('metrics/', views.metrics, name='metrics'),
 
     path('', include(router.urls)),
+    path('debug-db/', views.debug_db),
 ]

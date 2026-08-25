@@ -7,6 +7,7 @@ from django.conf import settings
 from rest_framework import status
 from .tasks import send_notification_task
 from rest_framework import viewsets
+from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -510,3 +511,8 @@ def metrics(request):
         "total_notifications_sent": Notification.objects.count()
     })
 
+def debug_db(request):
+    return JsonResponse({
+        "ACTIVE_DB_ENGINE": settings.DATABASES['default']['ENGINE'],
+        "ENV_DATABASE_URL": os.environ.get('DATABASE_URL', 'MISSING_FROM_ENV')
+    })
