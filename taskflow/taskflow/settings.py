@@ -57,7 +57,7 @@ WSGI_APPLICATION = 'taskflow.wsgi.application'
 # ---------------------------------------------------------
 # DATABASE CONFIGURATION
 # ---------------------------------------------------------
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = "postgresql://neondb_owner:npg_OVfeRDx9Twq6@ep-dry-queen-aystw21k.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
 if not DATABASE_URL:
     raise ValueError(
