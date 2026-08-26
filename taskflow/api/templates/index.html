@@ -1295,7 +1295,7 @@ function Dashboard({onNavigate}){
 
 /* ── App Shell ─────────────────────────────────────────────────────────────────── */
 function App(){
-  const inviteMatch=window.location.pathname.match(/^\/invite\/([a-f0-9-]{36})$/i);
+  const inviteMatch=window.location.pathname.match(/^\/invite\/([a-f0-9-]{36})\/?$/i);
   if(inviteMatch) return <AcceptInvitePage token={inviteMatch[1]}/>;
 
   const [authed,setAuthed]=React.useState(!!getToken());
