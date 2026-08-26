@@ -141,6 +141,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Only the project creator can delete it'}, status=403)
         project.delete()
         return Response(status=204)
+    
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'], url_path='members')
     def members(self, request, pk=None):
@@ -466,7 +472,7 @@ def project_invites(request, project_id):
         return Response({'error': 'Not found'}, status=404)
     if not ProjectMember.objects.filter(project=project, user=request.user, role='admin').exists():
         return Response({'error': 'Admin only'}, status=403)
-    invites = ProjectInvite.objects.filter(project=project).order_by('-created_at')
+    invites = ProjectInvite.objects.filter(project_id=project_id)
     return Response(ProjectInviteSerializer(invites, many=True).data)
 
 
